@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Assessment 1 — RSS Server Frontend (LMS)
 
-## Getting Started
+Next.js App Router frontend for an **RSS Server → LMS** announcement experience. Assessment 1 is **frontend only**: Module 4-style sample posts are stored in `localStorage`. Live RSS ingest is reserved for Assessment 2.
 
-First, run the development server:
+## Stack
+
+- Next.js (App Router) + React + TypeScript
+- Custom CSS design system ([`design.md`](design.md)) with Alliance No.1 / No.2 fonts
+- Theme preference via **cookie**; compact list preference via **localStorage**
+
+## Setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Pages
 
-## Learn More
+| Route | Purpose |
+|-------|---------|
+| `/` | Home — project intro + workflow overview |
+| `/about` | Name, student number, how-to video slot, continuity notes |
+| `/feeds` | Feed/post list (sample + local drafts) |
+| `/feeds/new` | Create a local feed item |
+| `/feeds/[id]` | Dynamic detail page |
+| `/settings` | Light/dark theme + compact list preferences |
 
-To learn more about Next.js, take a look at the following resources:
+## Student details
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Edit [`lib/student.ts`](lib/student.ts) before submission (name + student number appear in the header/footer/About page).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Design notes
 
-## Deploy on Vercel
+Visual language follows [`design.md`](design.md): cyan 1px lines, transparent outline controls, Alliance fonts from `public/fonts/`. Dark theme uses the design tokens directly; light theme adapts the same structure for the rubric.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## GitHub
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Replace this line with your repository URL after pushing:
+
+`https://github.com/<you>/<repo>`
+
+## Submission checklist
+
+- [ ] Update `lib/student.ts`
+- [ ] Add short how-to clip on About (`public/demo.mp4` or embed)
+- [ ] Record 3–8 min walkthrough (student ID, face, voice)
+- [ ] Zip **without** `node_modules`
+- [ ] AI acknowledgement + Turnitin similarity score
