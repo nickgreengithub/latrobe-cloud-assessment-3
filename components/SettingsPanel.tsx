@@ -18,8 +18,8 @@ export function SettingsPanel() {
         <div className="toggle-copy">
           <strong>Colour theme</strong>
           <span>
-            Light and dark modes use the same Alliance / cyan line system. Preference
-            is saved in a cookie.
+            Light and dark modes share the same Alliance type and gradient accent
+            system. Your preference is saved in a cookie.
           </span>
         </div>
         <button

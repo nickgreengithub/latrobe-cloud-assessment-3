@@ -1,4 +1,3 @@
-import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FeedDetail } from "@/components/FeedDetail";
 
 export default async function FeedDetailPage({
@@ -9,15 +8,10 @@ export default async function FeedDetailPage({
   const { id } = await params;
 
   return (
-    <div className="stack">
-      <Breadcrumbs
-        items={[
-          { label: "Home", href: "/" },
-          { label: "Feeds", href: "/feeds" },
-          { label: "Item" },
-        ]}
-      />
-      <FeedDetail id={id} />
+    <div className="view">
+      <div className="view-body scroll-area detail-scroll">
+        <FeedDetail id={id} />
+      </div>
     </div>
   );
 }

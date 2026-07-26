@@ -3,10 +3,12 @@ import { STUDENT } from "@/lib/student";
 export function Footer() {
   return (
     <footer className="site-footer">
-      <span>
-        {STUDENT.name} · {STUDENT.studentNumber}
-      </span>
-      <span>Frontend only · RSS server in Assessment 2</span>
+      <div className="app-frame site-footer-inner">
+        <span>
+          {STUDENT.name} · {STUDENT.studentNumber}
+        </span>
+        <span className="footer-note">Frontend only · RSS in Assessment 2</span>
+      </div>
     </footer>
   );
 }

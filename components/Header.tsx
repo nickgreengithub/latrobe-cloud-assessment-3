@@ -3,14 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
-import { STUDENT } from "@/lib/student";
 import { useTheme } from "@/components/ThemeProvider";
+import {
+  HomeIcon,
+  InfoIcon,
+  MoonIcon,
+  RssIcon,
+  SettingsIcon,
+  SunIcon,
+} from "@/components/icons";
+import { STUDENT } from "@/lib/student";
 
 const NAV = [
-  { href: "/", label: "Home" },
-  { href: "/feeds", label: "Feeds" },
-  { href: "/about", label: "About" },
-  { href: "/settings", label: "Settings" },
+  { href: "/", label: "Home", Icon: HomeIcon },
+  { href: "/feeds", label: "Feeds", Icon: RssIcon },
+  { href: "/about", label: "About", Icon: InfoIcon },
+  { href: "/settings", label: "Settings", Icon: SettingsIcon },
 ] as const;
 
 export function Header() {
@@ -29,84 +37,88 @@ export function Header() {
       if (event.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const isCurrent = (href: string) => {
-    if (href === "/") return pathname === "/";
-    return pathname === href || pathname.startsWith(`${href}/`);
-  };
+  const isCurrent = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
     <header className="site-header">
-      <div className="brand-block">
-        <p className="brand-eyebrow">La Trobe · Cloud Web Applications</p>
-        <h1 className="brand-title">{STUDENT.assessmentTitle}</h1>
-      </div>
+      <div className="app-frame site-header-main">
+        <Link href="/" className="brand-block" aria-label="Home">
+          <span className="brand-mark" aria-hidden="true">
+            <RssIcon />
+          </span>
+          <span className="brand-text">
+            <span className="brand-eyebrow">La Trobe · Cloud Web Applications</span>
+            <span className="brand-title">{STUDENT.assessmentTitle}</span>
+          </span>
+        </Link>
 
-      <div className="header-actions">
-        <nav className="desktop-nav" aria-label="Primary">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="nav-link"
-              aria-current={isCurrent(item.href) ? "page" : undefined}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="header-actions">
+          <nav className="desktop-nav" aria-label="Primary">
+            {NAV.map(({ href, label, Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="nav-link"
+                aria-current={isCurrent(href) ? "page" : undefined}
+              >
+                <Icon />
+                <span>{label}</span>
+              </Link>
+            ))}
+          </nav>
 
-        <button
-          type="button"
-          className="btn btn-ghost"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-        >
-          {theme === "dark" ? "Light" : "Dark"}
-        </button>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          </button>
 
-        <button
-          type="button"
-          className="hamburger-button"
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-          aria-controls={menuId}
-          onClick={() => setOpen((value) => !value)}
-        >
-          <span />
-          <span />
-          <span />
-        </button>
+          <button
+            type="button"
+            className="hamburger-button"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls={menuId}
+            onClick={() => setOpen((value) => !value)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        </div>
       </div>
 
       <button
         type="button"
         className={`nav-backdrop${open ? " open" : ""}`}
-        aria-label="Close menu overlay"
-        tabIndex={open ? 0 : -1}
+        aria-label="Close menu"
+        tabIndex={-1}
         onClick={() => setOpen(false)}
       />
 
       <nav
         id={menuId}
-        className={`mobile-nav${open ? " open" : ""}`}
+        className={`mobile-nav app-frame${open ? " open" : ""}`}
         aria-label="Compact"
         aria-hidden={!open}
       >
-        {NAV.map((item) => (
+        {NAV.map(({ href, label, Icon }) => (
           <Link
-            key={item.href}
-            href={item.href}
+            key={href}
+            href={href}
             className="nav-link"
-            aria-current={isCurrent(item.href) ? "page" : undefined}
+            tabIndex={open ? undefined : -1}
+            aria-current={isCurrent(href) ? "page" : undefined}
           >
-            {item.label}
+            <Icon />
+            <span>{label}</span>
           </Link>
         ))}
       </nav>

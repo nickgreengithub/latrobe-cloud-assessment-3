@@ -36,6 +36,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# course materials (not part of the submission codebase)
+/module_1
+/module_2
+/module_3
+/marking_criteria_*.png
+/assignment_instructions.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -3,6 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { FeedThumb } from "@/components/FeedThumb";
+import {
+  ArrowLeftIcon,
+  CalendarIcon,
+  RssIcon,
+  TrashIcon,
+  UserIcon,
+} from "@/components/icons";
 import {
   deleteFeed,
   formatFeedDate,
@@ -37,28 +45,46 @@ export function FeedDetail({ id }: { id: string }) {
 
   return (
     <article className="stack">
-      <div className="feed-meta">
-        <span>{formatFeedDate(feed.pubDate)}</span>
-        <span>{feed.author}</span>
-        <span>{feed.source ?? "Local"}</span>
-      </div>
-      <h1 className="page-title" style={{ marginBottom: 0 }}>
-        {feed.title}
-      </h1>
-      <p className="page-lead">{feed.summary}</p>
-      {feed.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={feed.imageUrl} alt="" style={{ border: "1px solid var(--line)" }} />
-      ) : null}
-      <div className="panel" style={{ padding: "1.1rem" }}>
-        <div className="prose">
-          {feed.content.split("\n\n").map((paragraph) => (
-            <p key={paragraph.slice(0, 24)}>{paragraph}</p>
-          ))}
+      <nav className="detail-crumbs" aria-label="Breadcrumb">
+        <Link href="/feeds">Feeds</Link>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Item</span>
+      </nav>
+
+      <FeedThumb imageUrl={feed.imageUrl} seed={feed.id} className="feed-hero" />
+
+      <header className="feed-detail-head">
+        <div className="feed-meta">
+          <span>
+            <CalendarIcon />
+            {formatFeedDate(feed.pubDate)}
+          </span>
+          <span>
+            <UserIcon />
+            {feed.author}
+          </span>
+          <span>
+            <RssIcon />
+            {feed.source ?? "Local"}
+          </span>
+        </div>
+        <h1 className="feed-detail-title">{feed.title}</h1>
+        <p className="feed-detail-lead">{feed.summary}</p>
+      </header>
+
+      <div className="panel">
+        <div className="panel-body">
+          <div className="prose">
+            {feed.content.split("\n\n").map((paragraph) => (
+              <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+            ))}
+          </div>
         </div>
       </div>
+
       <div className="btn-row">
         <Link className="btn btn-ghost" href="/feeds">
+          <ArrowLeftIcon />
           Back to feeds
         </Link>
         <button
@@ -69,6 +95,7 @@ export function FeedDetail({ id }: { id: string }) {
             router.push("/feeds");
           }}
         >
+          <TrashIcon />
           Delete local item
         </button>
       </div>

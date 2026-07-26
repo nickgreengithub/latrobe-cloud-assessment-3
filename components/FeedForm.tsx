@@ -2,9 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { addFeed } from "@/lib/feeds";
+import { addFeed, type FeedItem } from "@/lib/feeds";
 
-export function FeedForm() {
+export function FeedForm({
+  onSuccess,
+  onCancel,
+  embedded = false,
+}: {
+  /** Called after a feed is created. Defaults to navigating to its detail page. */
+  onSuccess?: (item: FeedItem) => void;
+  /** Called when the user cancels. Defaults to returning to the feed list. */
+  onCancel?: () => void;
+  /** Renders without the standalone panel chrome (for use inside a dialog). */
+  embedded?: boolean;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -24,14 +35,29 @@ export function FeedForm() {
     }
 
     const item = addFeed({ title, summary, content, author, imageUrl, source });
-    router.push(`/feeds/${item.id}`);
+    if (onSuccess) onSuccess(item);
+    else router.push(`/feeds/${item.id}`);
+  }
+
+  function handleCancel() {
+    if (onCancel) onCancel();
+    else router.push("/feeds");
   }
 
   return (
-    <form className="panel stack" style={{ padding: "1.1rem" }} onSubmit={onSubmit}>
+    <form
+      className={embedded ? "stack" : "panel stack"}
+      style={embedded ? undefined : { padding: "1.1rem" }}
+      onSubmit={onSubmit}
+    >
       <div className="field">
         <label htmlFor="title">Title</label>
-        <input id="title" name="title" placeholder="Announcement title" required />
+        <input
+          id="title"
+          name="title"
+          placeholder="Announcement title"
+          required
+        />
       </div>
       <div className="field">
         <label htmlFor="summary">Summary</label>
@@ -71,14 +97,10 @@ export function FeedForm() {
         </p>
       ) : null}
       <div className="btn-row">
-        <button className="btn" type="submit">
+        <button className="btn btn-primary" type="submit">
           Publish locally
         </button>
-        <button
-          className="btn btn-ghost"
-          type="button"
-          onClick={() => router.push("/feeds")}
-        >
+        <button className="btn btn-ghost" type="button" onClick={handleCancel}>
           Cancel
         </button>
       </div>

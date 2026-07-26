@@ -9,10 +9,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <div className="site-shell">
+      <div className="site-layout">
         <Header />
         <main id="main" className="site-main">
-          {children}
+          <div className="app-frame site-main-inner">{children}</div>
         </main>
         <Footer />
       </div>
