@@ -1611,31 +1611,26 @@ select {
   color: var(--muted);
 }
 
-.video-frame {
-  flex: 1;
-  min-height: 9rem;
-  display: grid;
-  place-items: center;
-  padding: 1.25rem;
+.video-panel-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.video-embed {
+  width: 100%;
+  aspect-ratio: 16 / 9;
   border-radius: var(--radius);
-  border: 1px dashed var(--border-strong);
-  background: var(--surface-2);
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.82rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #000;
+  box-shadow: var(--shadow);
 }
 
-.video-frame .icon {
-  font-size: 1.6rem;
-  color: var(--accent);
-  margin-bottom: 0.5rem;
-}
-
-.video-frame video {
+.video-embed iframe {
   width: 100%;
   height: 100%;
-  border-radius: var(--radius);
-  object-fit: contain;
+  border: 0;
+  display: block;
 }
 
 .toggle-row {

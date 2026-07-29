@@ -62,17 +62,16 @@ export default function AboutPage() {
                 How to use this website
               </span>
             </div>
-            <div className="panel-body" style={{ flex: 1, display: "flex" }}>
-              <div className="video-frame">
-                <div>
-                  <PlayIcon />
-                  <p style={{ margin: 0 }}>
-                    Record a short walkthrough — open Posts, create a post, open one in
-                    place, filter by category, toggle the theme, use the hamburger menu —
-                    then drop <code>public/demo.mp4</code> in and swap this placeholder for
-                    a <code>video</code> element (or embed your uploaded clip).
-                  </p>
-                </div>
+            <div className="panel-body video-panel-body">
+              <div className="video-embed">
+                <iframe
+                  src="https://www.youtube-nocookie.com/embed/Uy48ME4TYAI?rel=0"
+                  title="How to use this website — walkthrough"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
               </div>
             </div>
           </section>
