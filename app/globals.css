@@ -1,26 +1,5 @@
-@font-face {
-  font-family: "Alliance No.1";
-  src: url("/fonts/alliance-no1-light.woff2") format("woff2");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Alliance No.1";
-  src: url("/fonts/alliance-no1-regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Alliance No.2";
-  src: url("/fonts/alliance-no2-light.woff2") format("woff2");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
+/* Alliance No.1 / No.2 are loaded via next/font/local in app/layout.tsx, which
+   self-hosts them and exposes the --font-1 / --font-2 CSS variables. */
 
 /* ============================================================
    Design tokens
@@ -62,8 +41,7 @@
   --ring: 0 0 0 3px var(--accent-soft);
 
   --frame: min(64rem, calc(100% - 2.5rem));
-  --font-1: "Alliance No.1", system-ui, -apple-system, sans-serif;
-  --font-2: "Alliance No.2", "Alliance No.1", system-ui, sans-serif;
+  /* --font-1 / --font-2 are provided by next/font (see app/layout.tsx) */
 }
 
 [data-theme="light"] {

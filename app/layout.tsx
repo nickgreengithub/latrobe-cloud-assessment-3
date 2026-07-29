@@ -1,7 +1,33 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import { SiteShell } from "@/components/SiteShell";
 import { STUDENT } from "@/lib/student";
 import "./globals.css";
+
+// Self-hosted Alliance fonts. next/font emits them as hashed assets and exposes
+// CSS variables, so they resolve correctly under the GitHub Pages base path.
+const allianceNo1 = localFont({
+  src: [
+    { path: "./fonts/alliance-no1-light.woff2", weight: "300", style: "normal" },
+    {
+      path: "./fonts/alliance-no1-regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+  ],
+  variable: "--font-1",
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
+});
+
+const allianceNo2 = localFont({
+  src: [
+    { path: "./fonts/alliance-no2-light.woff2", weight: "300", style: "normal" },
+  ],
+  variable: "--font-2",
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
+});
 
 export const metadata: Metadata = {
   title: STUDENT.assessmentTitle,
@@ -27,7 +53,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-AU" suppressHydrationWarning>
+    <html
+      lang="en-AU"
+      className={`${allianceNo1.variable} ${allianceNo2.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
