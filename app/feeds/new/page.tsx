@@ -9,9 +9,9 @@ export default function NewFeedPage() {
           <PlusIcon />
           Feeds / Create
         </p>
-        <h1 className="sr-only">New feed item</h1>
+        <h1 className="sr-only">New post</h1>
         <p className="view-lead">
-          Drafts save to local storage and open on a dynamic detail page.
+          Posts save to local storage and open on a dynamic detail page.
         </p>
       </header>
 

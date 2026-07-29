@@ -39,15 +39,16 @@ export default function AboutPage() {
 
             <div className="prose prose-muted">
               <p>
-                This project is the frontend for an RSS Server that will feed subject
-                announcements into an LMS. Assessment 1 is <strong>frontend only</strong>:
-                there is no backend feed processing, and sample blog-style content from
-                Module 4 Part 2 stands in for live RSS data.
+                This is the admin frontend for an <strong>RSS server</strong>: an admin
+                authors <strong>posts</strong>, each filed under a category, which the
+                server publishes as RSS feeds. It is <strong>not an aggregator</strong> —
+                it creates and categorises feeds rather than collecting external ones.
               </p>
               <p>
-                Assessment 2 adds the server component and live RSS capability, so
-                announcements from multiple subjects can be ingested and surfaced in one
-                place instead of scattered across email.
+                Assessment 1 is frontend and usability only, so posts are held in local
+                storage as sample content. In Assessment 2 the server backend is added,
+                and these categorised posts are served as RSS to client apps — an LMS
+                being one such client.
               </p>
             </div>
           </div>
@@ -66,9 +67,10 @@ export default function AboutPage() {
                 <div>
                   <PlayIcon />
                   <p style={{ margin: 0 }}>
-                    Add <code>public/demo.mp4</code> and swap this placeholder for a video
-                    element: open Feeds, create an item, view detail, toggle theme, use the
-                    hamburger menu.
+                    Record a short walkthrough — open Posts, create a post, open one in
+                    place, filter by category, toggle the theme, use the hamburger menu —
+                    then drop <code>public/demo.mp4</code> in and swap this placeholder for
+                    a <code>video</code> element (or embed your uploaded clip).
                   </p>
                 </div>
               </div>

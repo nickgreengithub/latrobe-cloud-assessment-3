@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { addFeed, type FeedItem } from "@/lib/feeds";
+import { addFeed, FEED_CATEGORIES, type FeedItem } from "@/lib/feeds";
 
 export function FeedForm({
   onSuccess,
@@ -26,6 +26,7 @@ export function FeedForm({
     const summary = String(data.get("summary") ?? "");
     const content = String(data.get("content") ?? "");
     const author = String(data.get("author") ?? "");
+    const category = String(data.get("category") ?? "");
     const imageUrl = String(data.get("imageUrl") ?? "");
     const source = String(data.get("source") ?? "");
 
@@ -34,7 +35,15 @@ export function FeedForm({
       return;
     }
 
-    const item = addFeed({ title, summary, content, author, imageUrl, source });
+    const item = addFeed({
+      title,
+      summary,
+      content,
+      author,
+      category,
+      imageUrl,
+      source,
+    });
     if (onSuccess) onSuccess(item);
     else router.push(`/feeds/${item.id}`);
   }
@@ -83,13 +92,25 @@ export function FeedForm({
           <input id="author" name="author" placeholder="Subject coordinator" />
         </div>
         <div className="field">
-          <label htmlFor="source">Source label</label>
-          <input id="source" name="source" placeholder="CSE2CWA / Local draft" />
+          <label htmlFor="category">Category</label>
+          <select id="category" name="category" defaultValue="General">
+            {FEED_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
-      <div className="field">
-        <label htmlFor="imageUrl">Image URL (optional)</label>
-        <input id="imageUrl" name="imageUrl" placeholder="https://…" />
+      <div className="grid-2">
+        <div className="field">
+          <label htmlFor="source">Channel / source</label>
+          <input id="source" name="source" placeholder="CSE2CWA / University-wide" />
+        </div>
+        <div className="field">
+          <label htmlFor="imageUrl">Image URL (optional)</label>
+          <input id="imageUrl" name="imageUrl" placeholder="https://…" />
+        </div>
       </div>
       {error ? (
         <p className="inline-note" style={{ color: "var(--danger)" }}>

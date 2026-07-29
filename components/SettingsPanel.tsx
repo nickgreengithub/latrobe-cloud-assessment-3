@@ -34,9 +34,9 @@ export function SettingsPanel() {
 
       <div className="toggle-row">
         <div className="toggle-copy">
-          <strong>Compact feed list</strong>
+          <strong>Compact post list</strong>
           <span>
-            Hide summaries on the Feeds page for faster scanning. Stored in local
+            Hide summaries on the Posts page for faster scanning. Stored in local
             storage.
           </span>
         </div>
@@ -52,15 +52,15 @@ export function SettingsPanel() {
 
       <div className="toggle-row">
         <div className="toggle-copy">
-          <strong>Reset sample feeds</strong>
-          <span>Restore the Module 4-style seed announcements in local storage.</span>
+          <strong>Reset sample posts</strong>
+          <span>Restore the sample seed posts in local storage.</span>
         </div>
         <button
           type="button"
           className="btn btn-ghost"
           onClick={() => {
             resetFeeds();
-            setResetNote("Sample feeds restored.");
+            setResetNote("Sample posts restored.");
           }}
         >
           Reset

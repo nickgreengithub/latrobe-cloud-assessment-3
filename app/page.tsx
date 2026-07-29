@@ -18,7 +18,7 @@ export default function HomePage() {
         </p>
         <h1 className="sr-only">Home</h1>
         <p className="view-lead">
-          A single, modern home for RSS-fed LMS announcements.
+          An RSS server console for authoring and categorising announcement posts.
         </p>
       </header>
 
@@ -32,12 +32,12 @@ export default function HomePage() {
               <p className="feature-eyebrow">Primary view</p>
               <h2 className="feature-title">Feeds / Posts</h2>
               <p className="feature-copy">
-                Browse sample LMS announcements with search, a compact mode, and
-                dynamic read-more detail pages.
+                Author, categorise, search, and open the RSS posts this server
+                publishes — each with its own detail view.
               </p>
             </div>
             <span className="feature-cta">
-              Open feed
+              Open posts
               <ArrowRightIcon />
             </span>
           </div>

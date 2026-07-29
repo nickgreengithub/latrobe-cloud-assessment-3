@@ -1,17 +1,22 @@
 # Assessment 1 — Video Talking Points
 
 **Student:** Nicholas Green · **ID:** 22840097
-**Project:** Frontend for an RSS Server that feeds subject announcements into an LMS.
-**Scope:** Assessment 1 is *frontend design & usability only* — sample/local data stands in for live RSS, which arrives in Assessment 2.
+**Project:** Admin frontend for an RSS **server** — an admin authors categorised announcement **posts** that the server publishes as RSS; client apps (an LMS among them) consume them in Assessment 2. It *creates and categorises* feeds — it is **not** an aggregator that collects them. *(Per the unit clarification from Tony.)*
+**Scope:** Assessment 1 is *frontend design & usability only* — sample/local data stands in for the live RSS backend, which arrives in Assessment 2.
 
-> Two things the rubric rewards in the video: (1) a clear **how-to-use** walkthrough, and (2) an **insightful justification** of design decisions, usability, trade-offs, and project continuity. This script covers both. Aim for ~4–6 minutes. Speak to the points, don't read them verbatim.
+> Two things the rubric rewards in the video: (1) a clear **how-to-use** walkthrough, and (2) an **insightful justification** of design decisions, usability, trade-offs, and project continuity. This script covers both. Speak to the points, don't read them verbatim.
+
+### Logistics (from the unit recordings)
+- **Length: aim for ~6–8 minutes.** A 3-minute video scores poorly; the expectation is roughly **2 minutes demoing what the app does, then the rest showing + explaining/justifying** design choices ("show me this, explain that").
+- **Identity:** your **name + student number must be on the About page** (and they're in the footer). Show the About page on camera. Reading the number aloud isn't required, but state your name at the start.
+- **Submission:** **upload the video file to the LMS** (the uni-preferred way — avoid link-only, and don't commit a large video into the GitHub repo). GitHub holds the *source*; a live deployment isn't required for Assessment 1 (that's the Docker/EC2 backend work in Assessment 2).
 
 ---
 
 ## 0. Opening (~20s)
-- "Hi, I'm Nicholas Green, student 22840097. This is my Assessment 1 submission — the frontend for an RSS-fed LMS announcement stream."
-- The problem it solves: subject announcements are scattered across crowded email inboxes. This UI pulls them into **one announcement stream** — and in Assessment 2 a server will publish them as live RSS.
-- "Assessment 1 is frontend and usability only, so I'm using sample content stored locally."
+- "Hi, I'm Nicholas Green, student 22840097. This is my Assessment 1 submission — the admin frontend for an RSS server."
+- What it is: an admin authors announcement **posts**, each filed under a **category**; the server publishes these as RSS feeds. In Assessment 2, client apps (an LMS being one) subscribe and display them. Stress: it *creates and categorises* feeds — it is **not** an aggregator that collects external ones.
+- "Assessment 1 is frontend and usability only, so posts are sample content stored locally."
 
 ---
 
@@ -23,21 +28,21 @@
 - Click **Open feed**.
 
 **Feeds / Posts** (the core screen)
-- List of sample announcements. Point out each card: **image slot**, date, author/source, title, summary.
-- **Search** — type to filter the list live; the "N of M" counter updates.
-- **New** — opens a **dialog** to add an item (demo this: type a title/summary/content → Publish → it appears at the top instantly).
-- Click a card to open its **detail page** — this is a **dynamic route** (`/feeds/[id]`).
+- List of the server's **posts**. Point out each card: **category tag**, image slot, date, author, title, summary — and that the **whole card is clickable**.
+- **Search** posts live **+ filter by category** (the "N of M" counter updates).
+- **New** — opens an accessible **dialog** to author a post, including its **category** (demo: fill title/summary/content, pick a category → Publish → it appears at the top instantly).
+- Click a card to **open the post in place** inside the same panel — the container heading becomes the post title, the toolbar/count disappear, and a back button returns you. *(There's also a dynamic route `/feeds/[id]` as a deep-link.)*
 
-**Detail page**
-- Hero image slot, metadata (date/author/source), the full article, and an inline **breadcrumb** (Feeds / Item) plus **Back** and **Delete** actions.
+**Opened post (in place)**
+- Hero image slot, **category tag**, metadata (date/author/source), the full body, and **Back**/**Delete** — all without leaving the Feeds screen.
 
 **About**
 - Student details, project scope, a slot for this how-to video, and a **References** section that **hides/shows** (collapsible).
 
 **Settings**
 - **Theme** toggle (light/dark) — flip it and note the whole app updates instantly.
-- **Compact feed list** — turn it on, return to Feeds, show the denser layout.
-- **Reset sample feeds** restores the seed data.
+- **Compact post list** — turn it on, return to Feeds, show the denser layout.
+- **Reset sample posts** restores the seed data.
 
 **Responsive + navigation**
 - Shrink the window (or show on mobile): the nav collapses into a **hamburger menu** with an animated open/close, and layouts reflow to a single column.
@@ -59,16 +64,16 @@
 - Light and dark modes share the same tokens. The theme is saved in a **cookie** and applied by a tiny boot script *before* paint, so there's no flash on reload. The compact-list preference persists in **localStorage**. Both survive refresh and apply across every page.
 
 **Interactivity & sample/local data**
-- Feeds are seeded into **localStorage** and fully CRUD-able locally (create via the dialog, delete on the detail page) — a realistic stand-in for the RSS items A2 will ingest.
-- Navigation aids: **dynamic detail routes**, an inline **breadcrumb**, active-state nav highlighting, and the **hide/show** References panel.
+- Posts are seeded into **localStorage** and fully CRUD-able locally (author via the dialog with a **category**, open in place, delete) — a realistic stand-in for the categorised posts the server will publish as RSS in A2.
+- Navigation & filtering aids: **category filter**, live **search**, a **dynamic detail route** (`/feeds/[id]`), an inline **breadcrumb**, active-state nav highlighting, and the **hide/show** References panel.
 
 **Accessibility (WCAG-informed)**
 - Semantic landmarks (`header`/`main`/`nav`/`footer`), a **skip-to-content** link, and a visually-hidden `<h1>` on each page so the heading outline stays intact even though titles aren't shown.
-- The New-item dialog uses the **native `<dialog>` element**, so focus-trapping, Escape-to-close, and an inert background come from the platform; focus lands on the first field, and returns cleanly on close.
+- The New-post dialog uses the **native `<dialog>` element**, so focus-trapping, Escape-to-close, and an inert background come from the platform; focus lands on the first field, and returns cleanly on close.
 - Visible focus outlines, `aria-current` on the active tab, labelled icon buttons, and a **`prefers-reduced-motion`** fallback that disables animations.
 
 **Image placeholders — a deliberate trade-off**
-- Every feed reserves an **image slot**. Until the RSS server supplies media in A2, I render a **deterministic gradient placeholder** (stable per item, and computed without randomness so server and client render identically). The code already prefers a real image when an `imageUrl` is present — so nothing changes when live media arrives.
+- Every post reserves an **image slot**. Until the RSS server supplies media in A2, I render a **deterministic gradient placeholder** (stable per item, and computed without randomness so server and client render identically). The code already prefers a real image when an `imageUrl` is present — so nothing changes when live media arrives.
 
 **Code quality & modularity**
 - Reusable components: `FeedThumb` (image/placeholder), `Dialog` (generic accessible modal), a single `FeedForm` powering both the dialog and the standalone route, and a shared icon set.

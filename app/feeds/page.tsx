@@ -11,7 +11,7 @@ export default function FeedsPage() {
         </p>
         <h1 className="sr-only">Feeds / Posts</h1>
         <p className="view-lead">
-          Sample announcements, stored locally until live RSS lands in Assessment 2.
+          Posts authored on this server, held locally until the RSS backend lands in A2.
         </p>
       </header>
 

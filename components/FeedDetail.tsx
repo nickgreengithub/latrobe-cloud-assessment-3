@@ -54,6 +54,7 @@ export function FeedDetail({ id }: { id: string }) {
       <FeedThumb imageUrl={feed.imageUrl} seed={feed.id} className="feed-hero" />
 
       <header className="feed-detail-head">
+        <span className="feed-cat">{feed.category}</span>
         <div className="feed-meta">
           <span>
             <CalendarIcon />
@@ -85,7 +86,7 @@ export function FeedDetail({ id }: { id: string }) {
       <div className="btn-row">
         <Link className="btn btn-ghost" href="/feeds">
           <ArrowLeftIcon />
-          Back to feeds
+          Back to posts
         </Link>
         <button
           type="button"
@@ -96,7 +97,7 @@ export function FeedDetail({ id }: { id: string }) {
           }}
         >
           <TrashIcon />
-          Delete local item
+          Delete post
         </button>
       </div>
     </article>
