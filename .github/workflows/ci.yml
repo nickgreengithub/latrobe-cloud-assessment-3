@@ -1,0 +1,53 @@
+name: CI
+
+# Assessment 2 is delivered as a Docker container, not a static site, so the
+# GitHub Pages deployment from Assessment 1 has been retired: a static export
+# cannot run Route Handlers, which is where the entire API lives. The
+# Assessment 1 site remains live from its last successful deployment.
+#
+# This workflow checks that main stays buildable.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate the Prisma client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "file:./ci.db"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: "file:./ci.db"
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the container image
+        run: docker build -t latrobe-rss-server:ci .

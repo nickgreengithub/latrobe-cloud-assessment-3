@@ -3,6 +3,7 @@ import { FeedArt } from "@/components/FeedArt";
 import {
   ArrowRightIcon,
   InfoIcon,
+  PlayIcon,
   RssIcon,
   SettingsIcon,
   SparkleIcon,
@@ -47,6 +48,20 @@ export default function HomePage() {
         </Link>
 
         <div className="home-row">
+          <Link href="/client" className="feature-card">
+            <span className="feature-icon">
+              <PlayIcon />
+            </span>
+            <div className="feature-text">
+              <h2 className="feature-title">RSS Client</h2>
+              <p className="feature-copy">
+                Subscribe to this server&rsquo;s feeds over HTTP and read the RSS it
+                sends.
+              </p>
+            </div>
+            <ArrowRightIcon className="feature-arrow" />
+          </Link>
+
           <Link href="/about" className="feature-card">
             <span className="feature-icon">
               <InfoIcon />

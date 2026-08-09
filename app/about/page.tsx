@@ -23,7 +23,7 @@ export default function AboutPage() {
               <UserIcon />
               Student and project
             </span>
-            <span>Assessment 1</span>
+            <span>Assessment 2</span>
           </div>
           <div className="panel-body scroll-area">
             <div className="stats-grid" style={{ marginBottom: "0.85rem" }}>
@@ -45,10 +45,11 @@ export default function AboutPage() {
                 it creates and categorises feeds rather than collecting external ones.
               </p>
               <p>
-                Assessment 1 is frontend and usability only, so posts are held in local
-                storage as sample content. In Assessment 2 the server backend is added,
-                and these categorised posts are served as RSS to client apps — an LMS
-                being one such client.
+                Assessment 2 adds the server behind that interface. Posts are stored in
+                SQLite through Prisma, created and edited over a REST API, and published
+                as RSS 2.0 at <code>/rss</code> and <code>/rss/[channel]</code>. The whole
+                server runs in a Docker container, and the RSS Client page subscribes to
+                it exactly as an LMS would.
               </p>
             </div>
           </div>
