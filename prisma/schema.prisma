@@ -1,0 +1,130 @@
+// RSS Server — Assessment 2 schema.
+//
+// The data model answers one question: what does this server need to store in
+// order to publish valid RSS 2.0 channels that an LMS client can subscribe to?
+// Every model below maps onto a part of the RSS specification.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// An RSS channel this server publishes, served at /rss/[slug].
+///
+/// The channel and the category are deliberately the same concept: a post is
+/// published to one or more named channels, and each channel is exactly one
+/// RSS feed. A separate Category model alongside this one would have been
+/// duplication — /rss/careers *is* the Careers feed.
+model Feed {
+  id          String   @id @default(cuid())
+  slug        String   @unique /// the URL segment: /rss/careers
+  title       String
+  description String
+  link        String
+  language    String   @default("en-AU")
+  imageUrl    String?
+  ttl         Int      @default(60) /// minutes a client should cache this channel
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts FeedPost[]
+
+  @@index([createdAt])
+}
+
+/// An RSS <item> — the blog data carried by the feed.
+model Post {
+  id       String   @id @default(cuid())
+  guid     String   @unique /// stable item identifier required by RSS
+  slug     String   @unique
+  title    String
+  summary  String
+  content  String
+  link     String?
+  imageUrl String?
+  pubDate  DateTime @default(now())
+  status   String   @default("published") /// "draft" | "published" — SQLite has no native enum
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// SetNull, not Cascade: removing a person must not destroy the posts they
+  /// published. The item stays in the feed, simply unattributed.
+  authorId String?
+  author   Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  feeds      FeedPost[]
+  enclosures Enclosure[]
+
+  @@index([status, pubDate]) /// exactly the feed-rendering query
+}
+
+/// The poster — RSS <author>.
+model Author {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  avatarUrl String?
+  bio       String?
+  createdAt DateTime @default(now())
+
+  posts Post[]
+}
+
+/// Explicit many-to-many join between posts and channels.
+///
+/// Explicit rather than implicit so the association can carry its own data
+/// (assignedAt) and be queried directly. One post can syndicate to several
+/// channels — an internship notice belongs in both Careers and General.
+model FeedPost {
+  feedId     String
+  postId     String
+  assignedAt DateTime @default(now())
+
+  feed Feed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([feedId, postId])
+  @@index([postId])
+}
+
+/// RSS <enclosure> — media attached to an item. Cascades with its post.
+model Enclosure {
+  id          String @id @default(cuid())
+  url         String
+  mimeType    String
+  lengthBytes Int    @default(0)
+
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+/// A registered RSS client polling this server. Powers /api/stats.
+model Subscriber {
+  id           String    @id @default(cuid())
+  name         String
+  clientUrl    String
+  lastPolledAt DateTime?
+  pollCount    Int       @default(0)
+  createdAt    DateTime  @default(now())
+}
+
+/// One row per /api request, written by the route wrapper. Powers /api/count.
+model RequestLog {
+  id         String   @id @default(cuid())
+  method     String
+  path       String
+  statusCode Int
+  durationMs Int
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+}
