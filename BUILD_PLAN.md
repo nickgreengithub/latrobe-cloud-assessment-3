@@ -18,6 +18,33 @@ green.
 | GitHub Pages (A1) | **Keep**, gated behind `BUILD_TARGET=static` | Preserves the working A1 link; Docker build uses `output: "standalone"` |
 | Scope | **Core 22 of 25 marks tonight** | Tests and README polish are drop-first (see [Drop-first list](#drop-first-list)) |
 | Git | **Feature branches → PR → `main`** | Rubric: "separate branches for major features, a clean main branch" |
+| RSS surface | **`/rss` plus `/rss/[slug]` per channel** | Coordinator guidance: keep it simple, point the client straight at an endpoint |
+
+### Coordinator guidance (incorporated)
+
+Subject coordinator advice, relayed via another student, on how simple the RSS surface should
+be:
+
+> I would keep it even simpler. Point it to `/rss`. Then the endpoint `/rss` will send
+> whatever is current […] If you are implementing category of RSS feed — then yes dynamic
+> page: `/rss/internship`, `/rss/hackathon`, `/rss/csitnews`. Client — receives RSS feeds,
+> just point it to the different endpoint. […] There isn't much point for dynamic paging,
+> unless it's just the admin side of things. Even that could just be done in a list of cards.
+
+Three consequences, all of which **reduce** the work:
+
+1. **One channel model, not two.** The category *is* the channel. A separate `Feed` model
+   alongside `Category` was duplication — they merge into `Feed`, whose `slug` is the URL
+   segment. One fewer model, one fewer CRUD resource, one fewer join.
+2. **RSS moves to `/rss` and `/rss/[slug]`**, not `/api/feeds/[slug]/rss.xml`. Adds an
+   aggregate "everything current" channel, which the original plan lacked.
+3. **Paging stays on the admin API only.** `?page=&limit=` on `/api/posts` is kept — the
+   6-mark criterion rewards "predictable, well structured" responses and it is already
+   written — but no paginated UI. The feed list stays a list of cards.
+
+**What this does not change:** the schema still needs real relationships to score on the
+7-mark criterion. Keep the many-to-many, the author relation, enclosures and cascade rules.
+The advice is about URL surface, not about flattening the data model into one table.
 
 ---
 
@@ -43,7 +70,7 @@ behaviour. See [Video shot list](#video-shot-list).
 |---|---|---|---|
 | 0 | Prep and config gate | 15 min | unblocks everything |
 | 1 | Prisma schema, migration, seed | 60 min | 7 |
-| 2 | CRUD route handlers | 75 min | 6 (shared) |
+| 2 | CRUD route handlers | 60 min | 6 (shared) |
 | 3 | Operational endpoints + request logging | 40 min | 6 (shared) |
 | 4 | RSS 2.0 XML output | 30 min | makes it an RSS *server* |
 | 5 | Dockerfile + compose | 45 min | 3 |
@@ -188,10 +215,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// An RSS channel this server publishes.
+/// An RSS channel this server publishes — served at /rss/[slug].
+/// The channel and the category are the same concept, deliberately: a post is
+/// published to one or more named channels, and each channel is one RSS feed.
 model Feed {
   id          String   @id @default(cuid())
-  slug        String   @unique
+  slug        String   @unique // the URL segment: /rss/careers
   title       String
   description String
   link        String
@@ -201,7 +230,7 @@ model Feed {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  posts Post[]
+  posts FeedPost[]
 
   @@index([createdAt])
 }
@@ -221,15 +250,12 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  feedId   String
-  feed     Feed   @relation(fields: [feedId], references: [id], onDelete: Cascade)
   authorId String?
   author   Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
-  categories  PostCategory[]
-  enclosures  Enclosure[]
+  feeds      FeedPost[]
+  enclosures Enclosure[]
 
-  @@index([feedId, pubDate])
   @@index([status, pubDate])
 }
 
@@ -245,27 +271,19 @@ model Author {
   posts Post[]
 }
 
-model Category {
-  id          String  @id @default(cuid())
-  name        String  @unique
-  slug        String  @unique
-  description String?
-
-  posts PostCategory[]
-}
-
 /// Explicit many-to-many join — chosen over an implicit relation so the
-/// association itself can carry data and be queried directly.
-model PostCategory {
+/// association itself can carry data and be queried directly. A post can be
+/// syndicated to several channels (an internship notice is both Careers and News).
+model FeedPost {
+  feedId     String
   postId     String
-  categoryId String
   assignedAt DateTime @default(now())
 
-  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  feed Feed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  @@id([postId, categoryId])
-  @@index([categoryId])
+  @@id([feedId, postId])
+  @@index([postId])
 }
 
 /// RSS <enclosure> — attached media (images, audio).
@@ -306,12 +324,15 @@ model RequestLog {
 }
 ```
 
-**Points to be ready to justify on camera:** cascade delete from `Feed → Post → Enclosure` so
-deleting a channel can't orphan items; `SetNull` on author so removing a person doesn't
-destroy their published posts; `guid` and `slug` unique because RSS requires a stable item
-identifier; composite index `[feedId, pubDate]` because that is exactly the feed-rendering
-query; explicit `PostCategory` rather than an implicit m-n so the join can carry `assignedAt`;
-`status` as a string with a documented union because SQLite has no native enum type.
+**Points to be ready to justify on camera:** the channel and the category are one model
+because they are one concept — `/rss/careers` *is* the Careers feed, so a second table would
+have been duplication; many-to-many `FeedPost` so one post can syndicate to several channels,
+made explicit rather than implicit so the join can carry `assignedAt`; `SetNull` on author so
+removing a person doesn't destroy their published posts; cascade from `Post → Enclosure` and
+from either side into `FeedPost` so nothing is orphaned; `guid` and `slug` unique because RSS
+requires a stable item identifier; composite index `[status, pubDate]` because that is exactly
+the feed-rendering query; `status` as a string with a documented union because SQLite has no
+native enum type.
 
 ### 1.2 `lib/db.ts`
 
@@ -329,12 +350,14 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 ### 1.3 `prisma/seed.ts`
 
-Port the three `SEED_FEEDS` posts out of `lib/feeds.ts` into real rows: one `Feed` (the
-university announcements channel), the five categories already in `FEED_CATEGORIES`
-(Careers, Events, Academic, Administrative, General), three `Author` records matching the
-existing `author` strings, three `Post` records with their category links, and one
-`Subscriber` representing the LMS client. Use `upsert` keyed on `slug` so re-seeding is
-idempotent — you will re-seed on camera.
+Port the three `SEED_FEEDS` posts out of `lib/feeds.ts` into real rows. The five names already
+in `FEED_CATEGORIES` become the five channels — `careers`, `events`, `academic`,
+`administrative`, `general` — each with a real channel title, description and link, so
+`/rss/careers` works the moment you seed. (The coordinator's `internship` / `hackathon` /
+`csitnews` examples are the same idea; keeping A1's five names earns the continuity point.)
+Then three `Author` records matching the existing `author` strings, three `Post` records each
+linked to its channel via `FeedPost`, and one `Subscriber` representing the LMS client. Use
+`upsert` keyed on `slug` so re-seeding is idempotent — you will re-seed on camera.
 
 Wire it up in `package.json`:
 
@@ -359,7 +382,8 @@ npm run db:studio     # confirm rows exist, then close
 > `output = "../lib/generated/prisma"` to the generator block and update the `lib/db.ts`
 > import to match. Do this only if warned — it changes the Docker copy step in Stage 5.
 
-**Verify:** Prisma Studio shows 1 feed, 5 categories, 3 authors, 3 posts with category links.
+**Verify:** Prisma Studio shows 5 feeds/channels, 3 authors, 3 posts each joined to a channel
+via `FeedPost`, and 1 subscriber.
 **Commit + PR:** `feat(db): Prisma schema, migration and seed for the RSS server`
 
 ---
@@ -396,21 +420,24 @@ leaking a stack trace.
 
 ### 2.2 `lib/validation.ts`
 
-Zod schemas: `feedCreateSchema`, `feedUpdateSchema` (all fields optional), `postCreateSchema`,
-`postUpdateSchema`, `authorCreateSchema`, `categoryCreateSchema`, `subscriberCreateSchema`.
-Derive TypeScript types with `z.infer` so the frontend and API share one definition.
+Zod schemas: `feedCreateSchema`, `feedUpdateSchema` (all fields optional), `postCreateSchema`
+(including `feedSlugs: z.array(z.string()).min(1)`), `postUpdateSchema`, `authorCreateSchema`,
+`subscriberCreateSchema`. Derive TypeScript types with `z.infer` so the frontend and API share
+one definition.
 
 ### 2.3 Routes
 
 | File | Methods | Behaviour |
 |---|---|---|
 | `app/api/feeds/route.ts` | GET, POST | list channels with post counts; create → 201 |
-| `app/api/feeds/[id]/route.ts` | GET, PATCH, DELETE | 404 when missing; DELETE cascades |
-| `app/api/posts/route.ts` | GET, POST | filters `?feed=&category=&q=&status=&page=&limit=` |
-| `app/api/posts/[id]/route.ts` | GET, PATCH, DELETE | includes author, feed, categories |
+| `app/api/feeds/[id]/route.ts` | GET, PATCH, DELETE | 404 when missing; DELETE cascades the joins |
+| `app/api/posts/route.ts` | GET, POST | filters `?feed=&q=&status=&page=&limit=`; body takes `feedSlugs: string[]` |
+| `app/api/posts/[id]/route.ts` | GET, PATCH, DELETE | includes author, feeds, enclosures |
 | `app/api/authors/route.ts` + `[id]` | GET, POST, PATCH, DELETE | |
-| `app/api/categories/route.ts` + `[id]` | GET, POST, PATCH, DELETE | |
 | `app/api/subscribers/route.ts` | GET, POST | client registration |
+
+There is no `/api/categories` — channels *are* the categories, so `/api/feeds` is the one
+resource. That is one fewer CRUD pair to write and one fewer thing to explain on camera.
 
 Dynamic route shape for Next 16 — note the awaited params:
 
@@ -423,7 +450,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<'/api/posts/[id]'
   const { id } = await ctx.params;
   const post = await prisma.post.findUnique({
     where: { id },
-    include: { author: true, feed: true, categories: { include: { category: true } } },
+    include: { author: true, enclosures: true, feeds: { include: { feed: true } } },
   });
   return post ? ok(post) : fail("Post not found", 404);
 }
@@ -435,7 +462,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<'/api/posts/[id]'
 **Verify:** full create→read→update→delete cycle on `/api/posts` via `curl`, each returning
 the right status code. Keep these curl commands — they are your Stage 2 camera moment.
 
-**Commit + PR:** `feat(api): CRUD route handlers for feeds, posts, authors and categories`
+**Commit + PR:** `feat(api): CRUD route handlers for feeds, posts and authors`
 
 ---
 
@@ -497,9 +524,9 @@ and average duration — all aggregated from `RequestLog` with `groupBy`. Accept
 
 ### 3.4 `app/api/stats/route.ts` — feed statistics
 
-Posts per feed, posts per category, posts per author, total/published/draft counts, latest
-`pubDate`, subscriber count and total polls. Use `prisma.$transaction([...])` to run the
-aggregates as one batch, and say so on camera.
+Posts per channel, posts per author, total/published/draft counts, latest `pubDate`,
+subscriber count and total polls. Use `prisma.$transaction([...])` to run the aggregates as
+one batch, and say so on camera.
 
 **Verify:** hit each endpoint; browse the app; confirm `/api/count` numbers actually climb.
 **Commit + PR:** `feat(api): heartbeat, request count and feed statistics endpoints`
@@ -512,12 +539,31 @@ aggregates as one batch, and say so on camera.
 
 Without this it is a CRUD app, not an RSS server.
 
-**File:** `app/api/feeds/[slug]/rss.xml/route.ts`
+Two files, both serving RSS at the top level rather than under `/api` — the coordinator's
+"point it to `/rss`". Share one `lib/rss.ts` renderer between them.
 
-- Loads the feed by `slug` with its published posts ordered by `pubDate` desc, limit 50.
-- Returns `Content-Type: application/rss+xml; charset=utf-8`.
-- Increments the matching `Subscriber.pollCount` and stamps `lastPolledAt` when a
+| File | Route | Serves |
+|---|---|---|
+| `app/rss/route.ts` | `/rss` | **Whatever is current** — the latest published posts across every channel, newest first |
+| `app/rss/[slug]/route.ts` | `/rss/careers` | One channel |
+
+Both:
+
+- Order by `pubDate` desc, default limit 20, `?limit=` accepted and capped at 50. (`/rss?limit=5`
+  gives the "top 5 at once" behaviour Tony described, for free.)
+- Return `Content-Type: application/rss+xml; charset=utf-8`.
+- Return **404** for an unknown slug, not an empty channel — a client asking for a feed that
+  does not exist should be told so.
+- Increment the matching `Subscriber.pollCount` and stamp `lastPolledAt` when a
   `?subscriber=<id>` query param is present — this is what makes `/api/stats` interesting.
+
+`app/rss/route.ts` and `app/rss/[slug]/route.ts` sit at different segments, so there is no
+conflict — the restriction is only on a `route.ts` and a `page.tsx` in the *same* segment.
+
+For `/rss`, the channel metadata is the server itself ("La Trobe RSS Server — all
+announcements"); for `/rss/[slug]` it comes from the `Feed` row. Emit each post's channels as
+`<category>` elements either way, so a client reading the aggregate feed can still tell what
+came from where.
 
 Required RSS 2.0 shape:
 
@@ -541,9 +587,10 @@ Two things that will bite you: `pubDate` **must** be RFC-822 (`date.toUTCString(
 the seed content contains `&` and typographic quotes that will produce malformed XML
 otherwise.
 
-**Verify:** `curl http://localhost:3000/api/feeds/announcements/rss.xml` and paste the output
-into an RSS validator. It must validate cleanly.
-**Commit + PR:** `feat(rss): RSS 2.0 channel output with enclosures and subscriber tracking`
+**Verify:** `curl http://localhost:3000/rss` and `curl http://localhost:3000/rss/careers`,
+then paste both into an RSS validator. Both must validate cleanly. Check `/rss/nonsense`
+returns 404.
+**Commit + PR:** `feat(rss): /rss aggregate and /rss/[slug] channel output in RSS 2.0`
 
 ---
 
@@ -670,8 +717,10 @@ The healthy status and the surviving data are the two things to show on video.
 
 `lib/feeds.ts` currently *is* the data layer. Split it:
 
-- `lib/types.ts` — keep `FeedItem`, widen it to the API shape (author object, categories
-  array, feed reference). Keep `FEED_CATEGORIES` and `formatFeedDate`.
+- `lib/types.ts` — keep `FeedItem`, widen it to the API shape (author object, `feeds` array).
+  Keep `formatFeedDate`. `FEED_CATEGORIES` stops being a hardcoded constant and becomes a
+  fetch of `/api/feeds` — the channels now live in the database, and the existing category
+  filter in `FeedList` becomes a channel filter with no visual change.
 - `lib/api.ts` — typed fetch client: `listPosts(params)`, `getPost(id)`, `createPost(body)`,
   `updatePost(id, body)`, `deletePost(id)`, `listFeeds()`, `getHealth()`, `getCount()`,
   `getStats()`. All read `process.env.NEXT_PUBLIC_API_BASE || ""` as the prefix, unwrap the
@@ -694,7 +743,9 @@ the static export. Remove both — the page is server-rendered now.
 This is the one the rubric names directly: *"the video shows the RSS Server sending feeds to
 the RSS Client"*.
 
-- A URL input, pre-filled with this server's own feed URL, and a **Fetch feed** button.
+- A URL input pre-filled with `/rss`, a **Fetch feed** button, and a row of one-click channel
+  buttons (`/rss`, `/rss/careers`, `/rss/events`, …) built from `/api/feeds`. Switching
+  channels is the demonstration — "the client just points at a different endpoint".
 - Fetch the XML, parse with `new DOMParser().parseFromString(text, "application/xml")`, and
   render the channel metadata plus the items in the existing card styling.
 - Show the raw XML in a collapsible panel — proves it is genuinely RSS crossing the wire, not
@@ -705,7 +756,7 @@ the RSS Client"*.
 ### 6.4 New page: `/status` — operational dashboard
 
 Poll `/api/health`, `/api/count` and `/api/stats` every 5 seconds. Show heartbeat state, DB
-latency, request totals, the per-endpoint breakdown, and posts-per-category. This is the
+latency, request totals, the per-endpoint breakdown, and posts-per-channel. This is the
 "operational output" wording in the criterion, and it is the foundation of the Assessment 3
 dashboard.
 
@@ -751,10 +802,11 @@ after re-fetching the feed → watch `/status` counters climb.
 | 5 | Prisma Studio or the schema file | Walk the relations: Feed→Post→Enclosure, Post↔Category, cascade rules |
 | 6 | `curl` POST a new post → 201 | Then GET, PATCH, DELETE — the full CRUD cycle |
 | 7 | Frontend `/feeds` showing the new post | "Same database, read through the API" |
-| 8 | **`/client` page fetching `rss.xml`** | **"The RSS Server sending a feed to the RSS Client"** — the money shot |
-| 9 | Expand the raw XML panel | "Genuine RSS 2.0 over HTTP" |
-| 10 | `/status` counters climbing | Request counts and feed statistics |
-| 11 | Stop the container, reload the UI | Graceful error state, then restart and show data survived the volume |
+| 8 | **`/client` page fetching `/rss`** | **"The RSS Server sending a feed to the RSS Client"** — the money shot |
+| 9 | Switch the client to `/rss/careers`, then `/rss/events` | "Same client, different endpoint — one channel per category" |
+| 10 | Expand the raw XML panel | "Genuine RSS 2.0 over HTTP" |
+| 11 | `/status` counters climbing | Request counts and feed statistics |
+| 12 | Stop the container, reload the UI | Graceful error state, then restart and show data survived the volume |
 
 ---
 
@@ -768,8 +820,9 @@ In order, if the clock beats you:
 4. GitHub Pages workflow — zero A2 marks; disable it if it fights you.
 5. Subscriber poll tracking — `/api/stats` still works without it.
 
-**Never drop:** the schema, `/api/health`, one working CRUD resource, `rss.xml`, the
-Dockerfile, the `/client` page. Those are 22 of the 25 marks.
+**Never drop:** the schema, `/api/health`, one working CRUD resource, `/rss`, the Dockerfile,
+the `/client` page. Those are 22 of the 25 marks. If everything else burns, `/rss` plus a
+client that renders it is the assessment.
 
 ---
 
@@ -779,8 +832,8 @@ Dockerfile, the `/client` page. Those are 22 of the 25 marks.
 - [ ] `/api/health` returns healthy with a real DB probe
 - [ ] Full CRUD demonstrated on at least one resource
 - [ ] `/api/count` and `/api/stats` return live data
-- [ ] `rss.xml` passes an RSS validator
-- [ ] `/client` page renders a feed fetched from the server
+- [ ] `/rss` and `/rss/[slug]` pass an RSS validator
+- [ ] `/client` page renders a feed fetched from the server, and switches channels
 - [ ] Feature branches merged to `main` via PRs; `main` is clean
 - [ ] README current; no `node_modules` in the repo
 - [ ] `lib/student.ts` says Assessment 2
