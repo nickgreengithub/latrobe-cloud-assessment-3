@@ -29,7 +29,7 @@ export async function GET(
     );
   }
 
-  await recordPoll(url.searchParams.get("subscriber"), prisma);
+  await recordPoll(url.searchParams.get("subscriber"));
 
   const posts = await prisma.post.findMany({
     where: { status: "published", feeds: { some: { feedId: feed.id } } },

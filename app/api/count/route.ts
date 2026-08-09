@@ -30,14 +30,14 @@ export async function GET(request: NextRequest) {
       prisma.requestLog.groupBy({
         by: ["path"],
         where,
-        _count: { _all: true },
+        _count: true,
         _avg: { durationMs: true },
         orderBy: { _count: { path: "desc" } },
       }),
       prisma.requestLog.groupBy({
         by: ["statusCode"],
         where,
-        _count: { _all: true },
+        _count: true,
         orderBy: { statusCode: "asc" },
       }),
       prisma.requestLog.aggregate({
@@ -56,12 +56,12 @@ export async function GET(request: NextRequest) {
       slowestDurationMs: timing._max.durationMs ?? 0,
       byPath: byPath.map((row) => ({
         path: row.path,
-        count: row._count._all,
-        averageDurationMs: Math.round(row._avg.durationMs ?? 0),
+        count: row._count,
+        averageDurationMs: Math.round(row._avg?.durationMs ?? 0),
       })),
       byStatus: byStatus.map((row) => ({
         statusCode: row.statusCode,
-        count: row._count._all,
+        count: row._count,
       })),
     });
   });

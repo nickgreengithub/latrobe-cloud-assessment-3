@@ -1,4 +1,5 @@
 import type { SerializedPost } from "@/lib/serialize";
+import { prisma } from "@/lib/db";
 
 /**
  * RSS 2.0 rendering, shared by /rss and /rss/[slug].
@@ -123,13 +124,10 @@ export function readFeedLimit(url: URL) {
  * Records a poll when a client identifies itself with ?subscriber=<id>.
  * Fire-and-forget: feed delivery must not fail because telemetry did.
  */
-export async function recordPoll(
-  subscriberId: string | null,
-  prismaClient: { subscriber: { update: (args: unknown) => Promise<unknown> } },
-) {
+export async function recordPoll(subscriberId: string | null) {
   if (!subscriberId) return;
   try {
-    await prismaClient.subscriber.update({
+    await prisma.subscriber.update({
       where: { id: subscriberId },
       data: { pollCount: { increment: 1 }, lastPolledAt: new Date() },
     });

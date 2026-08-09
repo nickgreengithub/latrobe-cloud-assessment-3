@@ -1,13 +1,11 @@
 import { FeedDetail } from "@/components/FeedDetail";
-import { SEED_FEEDS } from "@/lib/feeds";
 
-// Pre-render a static detail page per seed post for the static export.
-export function generateStaticParams() {
-  return SEED_FEEDS.map((feed) => ({ id: feed.id }));
-}
-
-export const dynamicParams = false;
-
+/**
+ * Dynamic post page. Assessment 1 pre-rendered one page per seed post with
+ * generateStaticParams and dynamicParams = false, because the site was a static
+ * export. The posts now live in the database and can be created at runtime, so
+ * the route is rendered on demand instead.
+ */
 export default async function FeedDetailPage({
   params,
 }: {

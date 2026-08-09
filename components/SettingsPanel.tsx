@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "@/components/ThemeProvider";
-import { resetFeeds } from "@/lib/feeds";
+import { ApiError, getHealth } from "@/lib/api";
 import { useState } from "react";
 
 export function SettingsPanel() {
@@ -52,22 +52,34 @@ export function SettingsPanel() {
 
       <div className="toggle-row">
         <div className="toggle-copy">
-          <strong>Reset sample posts</strong>
-          <span>Restore the sample seed posts in local storage.</span>
+          <strong>Server connection</strong>
+          <span>
+            Posts are stored on the RSS server, not in this browser. Check that the
+            backend is reachable and the database is answering.
+          </span>
         </div>
         <button
           type="button"
           className="btn btn-ghost"
-          onClick={() => {
-            resetFeeds();
-            setResetNote("Sample posts restored.");
+          onClick={async () => {
+            setResetNote("Checking…");
+            try {
+              const health = await getHealth();
+              setResetNote(
+                `${health.status} · database ${health.database.status} (${health.database.latencyMs}ms)`,
+              );
+            } catch (err) {
+              setResetNote(
+                err instanceof ApiError ? err.message : "Server unreachable.",
+              );
+            }
           }}
         >
-          Reset
+          Check
         </button>
       </div>
 
-      <p className="inline-note" style={{ marginTop: "1rem" }}>
+      <p className="inline-note" style={{ marginTop: "1rem" }} role="status">
         Active theme: {theme} · Compact list: {compact ? "on" : "off"}
         {resetNote ? ` · ${resetNote}` : ""}
       </p>

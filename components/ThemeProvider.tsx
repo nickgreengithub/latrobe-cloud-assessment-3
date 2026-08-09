@@ -33,9 +33,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [compact, setCompactState] = useState(false);
   const [ready, setReady] = useState(false);
 
+  // Reads the saved preference from the cookie and localStorage on mount.
+  //
+  // This has to be an effect, and it has to set state synchronously: the server
+  // cannot know the visitor's stored theme, so rendering the default first and
+  // correcting it immediately on the client is what avoids a hydration
+  // mismatch. Deferring the update would show the wrong theme for a frame.
   useEffect(() => {
     const fromCookie = readThemeCookie();
     const initial = fromCookie ?? "dark";
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setThemeState(initial);
     applyTheme(initial);
     if (!fromCookie) writeThemeCookie(initial);

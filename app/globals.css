@@ -1744,3 +1744,66 @@ select {
     transform: none;
   }
 }
+
+/* ---- RSS Client (Assessment 2) ---- */
+
+/* A feed item rendered from parsed XML is not clickable — it has no detail
+   page on this server, because it came from the feed rather than the database. */
+.feed-row.static {
+  grid-template-columns: 1fr;
+  cursor: default;
+}
+
+.feed-row.static:hover {
+  transform: none;
+  border-color: var(--border);
+  background: var(--surface-2);
+  box-shadow: none;
+}
+
+/* Marks the channel button matching the endpoint currently being read. */
+.btn.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.code-block {
+  margin: 0;
+  padding: 0.9rem;
+  max-height: 26rem;
+  overflow: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+}
+
+.stat-tile {
+  padding: 0.85rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.stat-tile strong {
+  display: block;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.stat-tile span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}

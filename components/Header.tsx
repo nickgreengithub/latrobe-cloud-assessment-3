@@ -8,6 +8,7 @@ import {
   HomeIcon,
   InfoIcon,
   MoonIcon,
+  PlayIcon,
   RssIcon,
   SettingsIcon,
   SunIcon,
@@ -17,6 +18,7 @@ import { STUDENT } from "@/lib/student";
 const NAV = [
   { href: "/", label: "Home", Icon: HomeIcon },
   { href: "/feeds", label: "Feeds", Icon: RssIcon },
+  { href: "/client", label: "Client", Icon: PlayIcon },
   { href: "/about", label: "About", Icon: InfoIcon },
   { href: "/settings", label: "Settings", Icon: SettingsIcon },
 ] as const;
@@ -27,9 +29,14 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  useEffect(() => {
+  // Close the mobile menu on navigation. Adjusted during render rather than in
+  // an effect — React re-runs this component before painting, so the menu never
+  // flashes open on the new route.
+  const [lastPath, setLastPath] = useState(pathname);
+  if (lastPath !== pathname) {
+    setLastPath(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (!open) return;

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const siteUrl = siteUrlFrom(request);
   const limit = readFeedLimit(url);
 
-  await recordPoll(url.searchParams.get("subscriber"), prisma);
+  await recordPoll(url.searchParams.get("subscriber"));
 
   const posts = await prisma.post.findMany({
     where: { status: "published" },
