@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FeedThumb } from "@/components/FeedThumb";
 import {
   ArrowLeftIcon,
@@ -11,29 +11,64 @@ import {
   TrashIcon,
   UserIcon,
 } from "@/components/icons";
-import {
-  deleteFeed,
-  formatFeedDate,
-  getFeedById,
-  type FeedItem,
-} from "@/lib/feeds";
+import { ApiError, deletePost, getPost } from "@/lib/api";
+import { formatFeedDate, toFeedItem, type FeedItem } from "@/lib/types";
 
+/** Detail view for one post, fetched by id or slug from the API. */
 export function FeedDetail({ id }: { id: string }) {
   const router = useRouter();
-  const [feed, setFeed] = useState<FeedItem | null | undefined>(undefined);
+  const [feed, setFeed] = useState<FeedItem | null>(null);
+  const [state, setState] = useState<"loading" | "ready" | "missing" | "error">(
+    "loading",
+  );
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setFeed(getFeedById(id) ?? null);
+  const load = useCallback(async () => {
+    setState("loading");
+    try {
+      setFeed(toFeedItem(await getPost(id)));
+      setState("ready");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        setState("missing");
+      } else {
+        setError(err instanceof ApiError ? err.message : "Something went wrong.");
+        setState("error");
+      }
+    }
   }, [id]);
 
-  if (feed === undefined) {
-    return <p className="inline-note">Loading…</p>;
+  useEffect(() => {
+    // Deferred so the fetch's first setState does not run synchronously inside
+    // the effect body, which would cascade an extra render.
+    const timer = setTimeout(load, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
+
+  if (state === "loading") {
+    return <p className="inline-note">Loading post from the server…</p>;
   }
 
-  if (feed === null) {
+  if (state === "error") {
     return (
       <div className="empty-state">
-        <p>This feed item was not found in local storage.</p>
+        <p style={{ color: "var(--danger)" }}>{error}</p>
+        <div className="btn-row" style={{ marginTop: "0.85rem" }}>
+          <button type="button" className="btn btn-ghost" onClick={load}>
+            Try again
+          </button>
+          <Link className="btn" href="/feeds">
+            Back to feeds
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (state === "missing" || !feed) {
+    return (
+      <div className="empty-state">
+        <p>No post with that identifier exists on the server.</p>
         <div className="btn-row" style={{ marginTop: "0.85rem" }}>
           <Link className="btn" href="/feeds">
             Back to feeds
@@ -43,12 +78,25 @@ export function FeedDetail({ id }: { id: string }) {
     );
   }
 
+  async function handleDelete() {
+    if (!feed) return;
+    try {
+      await deletePost(feed.id);
+      router.push("/feeds");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not delete the post.");
+      setState("error");
+    }
+  }
+
   return (
     <article className="stack">
       <nav className="detail-crumbs" aria-label="Breadcrumb">
         <Link href="/feeds">Feeds</Link>
         <span aria-hidden="true">/</span>
-        <span aria-current="page">Item</span>
+        <span>{feed.category}</span>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{feed.title}</span>
       </nav>
 
       <FeedThumb imageUrl={feed.imageUrl} seed={feed.id} className="feed-hero" />
@@ -66,7 +114,7 @@ export function FeedDetail({ id }: { id: string }) {
           </span>
           <span>
             <RssIcon />
-            {feed.source ?? "Local"}
+            {feed.source ?? "Unfiled"}
           </span>
         </div>
         <h1 className="feed-detail-title">{feed.title}</h1>
@@ -83,19 +131,21 @@ export function FeedDetail({ id }: { id: string }) {
         </div>
       </div>
 
+      <p className="inline-note">
+        Published to:{" "}
+        {feed.channels.map((channel) => (
+          <a key={channel.slug} href={`/rss/${channel.slug}`} className="crumb-link">
+            /rss/{channel.slug}{" "}
+          </a>
+        ))}
+      </p>
+
       <div className="btn-row">
         <Link className="btn btn-ghost" href="/feeds">
           <ArrowLeftIcon />
           Back to posts
         </Link>
-        <button
-          type="button"
-          className="btn btn-danger"
-          onClick={() => {
-            deleteFeed(feed.id);
-            router.push("/feeds");
-          }}
-        >
+        <button type="button" className="btn btn-danger" onClick={handleDelete}>
           <TrashIcon />
           Delete post
         </button>

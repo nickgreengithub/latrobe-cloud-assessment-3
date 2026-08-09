@@ -11,7 +11,7 @@ export default function FeedsPage() {
         </p>
         <h1 className="sr-only">Feeds / Posts</h1>
         <p className="view-lead">
-          Posts authored on this server, held locally until the RSS backend lands in A2.
+          Posts stored in the server database and published to RSS channels.
         </p>
       </header>
 

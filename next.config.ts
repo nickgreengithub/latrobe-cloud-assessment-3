@@ -7,10 +7,10 @@ import type { NextConfig } from "next";
  * Pages — no server, no API. GitHub Pages serves this project site under
  * /<repo>, so the base path is applied for production builds only.
  *
- * The default is the Assessment 2 server build: `output: "standalone"` emits
- * .next/standalone/server.js, which is what the Docker runner stage executes.
- * A static export cannot run Route Handlers at all, so the API only exists in
- * this second target.
+ * The default is the Assessment 2 server build — a normal Next.js server build
+ * started with `next start`, which is what the Docker image runs. A static
+ * export cannot run Route Handlers at all, so the API only exists in this
+ * second target.
  */
 const repoBasePath = "/latrobe-cloud-applications";
 const isStatic = process.env.BUILD_TARGET === "static";
@@ -24,7 +24,6 @@ const nextConfig: NextConfig = isStatic
       images: { unoptimized: true },
     }
   : {
-      output: "standalone",
       images: { unoptimized: true },
     };
 

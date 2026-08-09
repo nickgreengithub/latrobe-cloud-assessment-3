@@ -1,0 +1,24 @@
+# Single service: the Next.js server, its API and the SQLite database all run
+# in one container. SQLite keeps the whole application to one process with no
+# start-up ordering to get wrong, and the database file lives on a named volume
+# so content survives `docker compose down`.
+
+services:
+  rss-server:
+    build: .
+    image: latrobe-rss-server:2.0.0
+    container_name: rss-server
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "file:/data/rss.db"
+      NODE_ENV: production
+      # Absolute URLs inside the RSS feed. Change this when serving from a
+      # different host so <link> and <guid> stay resolvable for clients.
+      SITE_URL: "http://localhost:3000"
+    volumes:
+      - rss-data:/data
+    restart: unless-stopped
+
+volumes:
+  rss-data:

@@ -7,7 +7,7 @@ export function Footer() {
         <span>
           {STUDENT.name} · {STUDENT.studentNumber}
         </span>
-        <span className="footer-note">Frontend only · RSS in Assessment 2</span>
+        <span className="footer-note">RSS server · API · SQLite · Docker</span>
       </div>
     </footer>
   );
