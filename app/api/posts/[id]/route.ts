@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { fail, handle, ok } from "@/lib/api-response";
-import { postUpdateSchema, slugify } from "@/lib/validation";
+import { postUpdateSchema } from "@/lib/validation";
+import { resolveAuthorByName } from "@/lib/authors";
 import { POST_INCLUDE, serializePost } from "@/lib/serialize";
 
 /**
@@ -37,13 +38,7 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     // Re-attribution by name, matching the create endpoint.
     let authorId = fields.authorId;
     if (!authorId && authorName) {
-      const email = `${slugify(authorName)}@example.invalid`;
-      const author = await prisma.author.upsert({
-        where: { email },
-        update: { name: authorName },
-        create: { name: authorName, email },
-      });
-      authorId = author.id;
+      authorId = (await resolveAuthorByName(authorName)).id;
     }
 
     if (feedSlugs) {
