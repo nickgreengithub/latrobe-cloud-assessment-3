@@ -6,7 +6,12 @@ import { prisma } from "@/lib/db";
  * Server component: the channel list is read from the database here and handed
  * to the form, so the options are always the channels the server actually
  * publishes rather than a hardcoded list.
+ *
+ * Rendered per request rather than prerendered — the channels are database
+ * state, and no database exists at build time inside the Docker image.
  */
+export const dynamic = "force-dynamic";
+
 export default async function NewFeedPage() {
   const channels = await prisma.feed.findMany({ orderBy: { title: "asc" } });
 
