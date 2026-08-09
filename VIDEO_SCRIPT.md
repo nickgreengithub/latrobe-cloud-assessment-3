@@ -75,7 +75,8 @@ curl -X POST http://localhost:3000/api/posts -H 'Content-Type: application/json'
 
 ## 2:00 — The schema (60s)
 
-> [**Editor: `prisma/schema.prisma`. Scroll slowly through the models.**]
+> [**Editor: `prisma/schema.prisma` — in VS Code, `Cmd+P` then type `schema.prisma`.
+> Scroll slowly through the models.**]
 >
 > "The database is SQLite through Prisma. Seven models, and each one earns its
 > place in the RSS use case.
@@ -97,6 +98,33 @@ curl -X POST http://localhost:3000/api/posts -H 'Content-Type: application/json'
 >
 > [**Point at `@@index([status, pubDate])`**] And that composite index is
 > precisely the query that renders a feed."
+
+**Optional — show the real rows** (a stronger shot than Prisma Studio, because it
+reads the live database inside the running container):
+
+```bash
+docker exec rss-server node --experimental-sqlite -e "
+const {DatabaseSync}=require('node:sqlite');
+const db=new DatabaseSync('/data/rss.db');
+for (const t of ['Feed','Post','Author','FeedPost','Enclosure','Subscriber','RequestLog'])
+  console.log(t.padEnd(12), db.prepare('SELECT COUNT(*) c FROM '+t).get().c);
+"
+```
+
+> "And those models aren't theoretical — here are the actual row counts from the
+> database inside the container. Five channels, three posts, and four rows in
+> the join table, because one post belongs to two channels."
+
+> **Do NOT run `npm run db:studio` on camera.** It reads `DATABASE_URL` from
+> `.env`, which points at the local `./dev.db` — a *different* database from the
+> container's `/data/rss.db`. They look almost identical, so the mistake is easy
+> to miss, but a post you create on camera will not appear in Studio. If you
+> want the Studio GUI, snapshot the live database first:
+>
+> ```bash
+> docker cp rss-server:/data/rss.db /tmp/live.db
+> DATABASE_URL="file:/tmp/live.db" npx prisma studio   # opens localhost:5555
+> ```
 
 ---
 

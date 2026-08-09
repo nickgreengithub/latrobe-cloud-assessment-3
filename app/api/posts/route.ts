@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { fail, handle, ok, readPaging } from "@/lib/api-response";
 import { postCreateSchema, slugify } from "@/lib/validation";
+import { resolveAuthorByName } from "@/lib/authors";
 import { POST_INCLUDE, serializePost } from "@/lib/serialize";
 
 /**
@@ -63,14 +64,11 @@ export async function POST(request: NextRequest) {
     }
 
     // An author may be supplied by id, or by name for convenience from the UI.
+    // Match an existing author by name before creating one, otherwise every
+    // post filed under a name that already exists spawns a duplicate person.
     let authorId = fields.authorId;
     if (!authorId && authorName) {
-      const author = await prisma.author.upsert({
-        where: { email: `${slugify(authorName)}@example.invalid` },
-        update: { name: authorName },
-        create: { name: authorName, email: `${slugify(authorName)}@example.invalid` },
-      });
-      authorId = author.id;
+      authorId = (await resolveAuthorByName(authorName)).id;
     }
 
     const finalSlug = slug ?? `${slugify(fields.title)}-${Date.now().toString(36)}`;
