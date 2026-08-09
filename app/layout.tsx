@@ -32,7 +32,7 @@ const allianceNo2 = localFont({
 export const metadata: Metadata = {
   title: STUDENT.assessmentTitle,
   description:
-    "Frontend for an RSS Server feeding into an LMS — Assessment 1 (design and usability).",
+    "An RSS Server feeding into an LMS: Next.js frontend, REST API, Prisma/SQLite database and RSS 2.0 output, running in Docker.",
 };
 
 const themeBootScript = `
