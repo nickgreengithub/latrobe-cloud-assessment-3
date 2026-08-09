@@ -26,9 +26,18 @@ Then set the stage:
 Have this command copied ready to paste:
 
 ```bash
-curl -X POST http://localhost:3000/api/posts -H 'Content-Type: application/json' \
+curl -s -o /tmp/r.json -w 'HTTP %{http_code}\n' -X POST http://localhost:3000/api/posts \
+  -H 'Content-Type: application/json' \
   -d '{"title":"Live demo post","summary":"Created on camera.","content":"Written to SQLite and published as RSS.","authorName":"Careers & Employability","feedSlugs":["careers"]}'
+python3 -c "
+import json;d=json.load(open('/tmp/r.json'))['data']
+print(' title  :',d['title']); print(' id     :',d['id'])
+print(' channel:',[f['slug'] for f in d['feeds']]); print(' author :',d['author']['name'])"
 ```
+
+> Raw \`curl\` prints the JSON body but **not** the status code, and the full
+> record is an unreadable wall of text on video. The \`-w\` flag prints
+> \`HTTP 201\` and the second command shows four readable lines instead of forty.
 
 ---
 
@@ -132,9 +141,8 @@ for (const t of ['Feed','Post','Author','FeedPost','Enclosure','Subscriber','Req
 
 > [**Terminal. Paste the prepared POST command, hit enter.**]
 >
-> "Here's a create through the REST API. It comes back **201** with the full
-> record — you can see it's been given an ID, a GUID, and it's been attached to
-> the Careers channel."
+> "Here's a create through the REST API. It comes back **201**, and you can see
+> the server has given it an ID and attached it to the Careers channel."
 
 > [**Type `curl -s localhost:3000/api/posts | head -c 400`**]
 >

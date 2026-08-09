@@ -79,13 +79,53 @@ export default function AboutPage() {
 
           <Collapsible title="References (APA 7th)">
             <div className="prose">
-              <p>Mozilla Developer Network. (n.d.). <em>ARIA</em>. MDN Web Docs.</p>
-              <p>Next.js. (n.d.). <em>App Router documentation</em>. Vercel.</p>
-              <p>React. (n.d.). <em>Thinking in React</em>. Meta Open Source.</p>
-              <p>W3C. (2024). <em>WCAG 2.2</em>.</p>
+              <p className="inline-note">Backend, data and deployment (Assessment 2)</p>
+              <p>
+                Docker Inc. (n.d.). <em>Best practices for writing Dockerfiles</em>.
+                Docker Documentation. https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+              </p>
+              <p>
+                Fielding, R. T., Nottingham, M., &amp; Reschke, J. (2022).{" "}
+                <em>HTTP semantics</em> (RFC 9110). Internet Engineering Task Force.
+                https://doi.org/10.17487/RFC9110
+              </p>
+              <p>
+                Prisma Data, Inc. (n.d.). <em>Prisma ORM: Data modelling and
+                relations</em>. Prisma Documentation. https://www.prisma.io/docs
+              </p>
+              <p>
+                RSS Advisory Board. (2009). <em>RSS 2.0 specification</em>.
+                https://www.rssboard.org/rss-specification
+              </p>
+              <p>
+                Codd, E. F. (1970). A relational model of data for large shared data
+                banks. <em>Communications of the ACM, 13</em>(6), 377&ndash;387.
+                https://doi.org/10.1145/362384.362685
+              </p>
+              <p>
+                Hipp, D. R. (n.d.). <em>SQLite: Appropriate uses for SQLite</em>.
+                SQLite Documentation. https://www.sqlite.org/whentouse.html
+              </p>
+
+              <p className="inline-note">Frontend and usability (Assessment 1)</p>
+              <p>
+                Mozilla Developer Network. (n.d.). <em>ARIA</em>. MDN Web Docs.
+                https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA
+              </p>
+              <p>
+                Vercel Inc. (n.d.). <em>Next.js App Router documentation</em>.
+                https://nextjs.org/docs/app
+              </p>
+              <p>Meta Open Source. (n.d.). <em>Thinking in React</em>. https://react.dev/learn/thinking-in-react</p>
+              <p>
+                World Wide Web Consortium. (2023). <em>Web Content Accessibility
+                Guidelines (WCAG) 2.2</em>. https://www.w3.org/TR/WCAG22/
+              </p>
               <p>
                 Nielsen, J. (1994). Enhancing the explanatory power of usability
-                heuristics. <em>CHI Conference Proceedings</em>.
+                heuristics. In <em>Proceedings of the SIGCHI Conference on Human
+                Factors in Computing Systems</em> (pp. 152&ndash;158). ACM.
+                https://doi.org/10.1145/191666.191729
               </p>
             </div>
           </Collapsible>
