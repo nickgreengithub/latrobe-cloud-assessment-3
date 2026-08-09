@@ -99,7 +99,7 @@ export function FeedDetail({ id }: { id: string }) {
         <span aria-current="page">{feed.title}</span>
       </nav>
 
-      <FeedThumb imageUrl={feed.imageUrl} seed={feed.id} className="feed-hero" />
+      <FeedThumb imageUrl={feed.imageUrl} className="feed-hero" />
 
       <header className="feed-detail-head">
         <span className="feed-cat">{feed.category}</span>

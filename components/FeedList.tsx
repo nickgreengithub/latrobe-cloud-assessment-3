@@ -94,11 +94,7 @@ export function FeedList() {
 
         <div className="scroll-area">
           <div className="article-view">
-            <FeedThumb
-              imageUrl={selected.imageUrl}
-              seed={selected.id}
-              className="feed-hero"
-            />
+            <FeedThumb imageUrl={selected.imageUrl} className="feed-hero" />
 
             <span className="feed-cat">{selected.category}</span>
 
@@ -220,11 +216,13 @@ export function FeedList() {
               <button
                 key={feed.id}
                 type="button"
-                className={`feed-row${compact ? " compact" : ""}`}
+                className={`feed-row${compact ? " compact" : ""}${
+                  feed.imageUrl ? "" : " no-thumb"
+                }`}
                 aria-label={`${feed.title} — ${feed.category}`}
                 onClick={() => setSelectedId(feed.id)}
               >
-                <FeedThumb imageUrl={feed.imageUrl} seed={feed.id} />
+                <FeedThumb imageUrl={feed.imageUrl} />
                 <span className="feed-row-body">
                   <span className="feed-cat">{feed.category}</span>
                   <span className="feed-meta">
