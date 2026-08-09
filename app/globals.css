@@ -1807,3 +1807,9 @@ select {
   color: var(--muted);
   font-size: 0.8rem;
 }
+
+/* A post with no image gets no image slot — the row becomes a single column so
+   the title and summary use the full width instead of indenting past a gap. */
+.feed-row.no-thumb {
+  grid-template-columns: 1fr;
+}
