@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { fail, handle, ok } from "@/lib/api-response";
-import { postUpdateSchema } from "@/lib/validation";
+import { postUpdateSchema, slugify } from "@/lib/validation";
 import { POST_INCLUDE, serializePost } from "@/lib/serialize";
 
 /**
@@ -34,6 +34,18 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     const existing = await prisma.post.findFirst({ where: byIdOrSlug(id) });
     if (!existing) return fail("Post not found", 404);
 
+    // Re-attribution by name, matching the create endpoint.
+    let authorId = fields.authorId;
+    if (!authorId && authorName) {
+      const email = `${slugify(authorName)}@example.invalid`;
+      const author = await prisma.author.upsert({
+        where: { email },
+        update: { name: authorName },
+        create: { name: authorName, email },
+      });
+      authorId = author.id;
+    }
+
     if (feedSlugs) {
       const feeds = await prisma.feed.findMany({ where: { slug: { in: feedSlugs } } });
       if (feeds.length !== feedSlugs.length) {
@@ -53,7 +65,7 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
 
     const post = await prisma.post.update({
       where: { id: existing.id },
-      data: { ...fields, ...(pubDate ? { pubDate: new Date(pubDate) } : {}) },
+      data: { ...fields, authorId, ...(pubDate ? { pubDate: new Date(pubDate) } : {}) },
       include: POST_INCLUDE,
     });
 
