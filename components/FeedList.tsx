@@ -219,7 +219,15 @@ export function FeedList() {
                 className={`feed-row${compact ? " compact" : ""}${
                   feed.imageUrl ? "" : " no-thumb"
                 }`}
-                aria-label={`${feed.title} — ${feed.category}`}
+                /*
+                  No aria-label. One used to read "<title> — <category>",
+                  which is a subset of the text visible inside the button —
+                  the date, author and summary were not in it. Lighthouse
+                  flags that as a label/name mismatch, and it means a voice
+                  user reading the row aloud cannot reliably select it. The
+                  row's own content is the accessible name instead: longer to
+                  hear, but it always matches what is on screen.
+                */
                 onClick={() => setSelectedId(feed.id)}
               >
                 <FeedThumb imageUrl={feed.imageUrl} />

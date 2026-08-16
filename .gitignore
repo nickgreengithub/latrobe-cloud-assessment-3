@@ -64,3 +64,12 @@ next-env.d.ts
 # local sqlite database (recreated by `npm run db:migrate && npm run db:seed`)
 /dev.db
 /dev.db-journal
+
+# Playwright output (reports are regenerated; traces are large)
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+
+# JMeter's own internal logs — the .jtl results and summary are the evidence
+/load/results/*.log
