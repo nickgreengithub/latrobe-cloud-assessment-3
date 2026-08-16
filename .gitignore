@@ -48,6 +48,7 @@ yarn-error.log*
 /Assessment*.docx
 /Archive.zip
 /links.txt
+/assessment_3
 
 # prisma — local database file, never committed
 /prisma/*.db
@@ -59,3 +60,7 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+
+# local sqlite database (recreated by `npm run db:migrate && npm run db:seed`)
+/dev.db
+/dev.db-journal
