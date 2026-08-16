@@ -159,6 +159,15 @@ export function PlayIcon(props: IconProps) {
   );
 }
 
+export function GaugeIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 18a8 8 0 1 1 16 0" />
+      <path d="M12 18l4.5-5" />
+    </Svg>
+  );
+}
+
 export function RefreshIcon(props: IconProps) {
   return (
     <Svg {...props}>
