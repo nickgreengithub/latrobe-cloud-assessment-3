@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { useTheme } from "@/components/ThemeProvider";
 import {
+  GaugeIcon,
   HomeIcon,
   InfoIcon,
   MoonIcon,
@@ -18,6 +19,7 @@ import { STUDENT } from "@/lib/student";
 const NAV = [
   { href: "/", label: "Home", Icon: HomeIcon },
   { href: "/feeds", label: "Feeds", Icon: RssIcon },
+  { href: "/dashboard", label: "Dashboard", Icon: GaugeIcon },
   { href: "/client", label: "Client", Icon: PlayIcon },
   { href: "/about", label: "About", Icon: InfoIcon },
   { href: "/settings", label: "Settings", Icon: SettingsIcon },

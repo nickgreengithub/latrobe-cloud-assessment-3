@@ -160,3 +160,73 @@ export async function getCount() {
   }>("/api/count");
   return data;
 }
+
+// ---- Dashboard ----
+
+export type AlertLevel = "critical" | "warning" | "info";
+
+export type FeedMetrics = {
+  slug: string;
+  title: string;
+  postCount: number;
+  requests: number;
+  polls: number;
+  itemsServed: number;
+  errors: number;
+  averageDurationMs: number;
+  lastPolledAt: string | null;
+  lastItemCount: number | null;
+  lastError: string | null;
+};
+
+export type Dashboard = {
+  generatedAt: string;
+  window: string;
+  health: {
+    status: string;
+    uptimeSeconds: number;
+    database: { status: string; latencyMs: number };
+    version: string;
+  };
+  totals: {
+    requests: number;
+    requestsInWindow: number;
+    errors: number;
+    errorRate: number;
+    uniqueClients: number;
+    feedPolls: number;
+    itemsServed: number;
+    averageDurationMs: number;
+    slowestDurationMs: number;
+    subscriberPolls: number;
+  };
+  content: {
+    feeds: number;
+    posts: number;
+    published: number;
+    drafts: number;
+    authors: number;
+    subscribers: number;
+  };
+  byFeed: FeedMetrics[];
+  byEndpoint: { path: string; count: number; averageDurationMs: number }[];
+  byStatus: { statusCode: number; count: number }[];
+  byClient: { clientKey: string; requests: number; lastSeenAt: string | null }[];
+  recent: {
+    method: string;
+    path: string;
+    statusCode: number;
+    durationMs: number;
+    feedSlug: string | null;
+    createdAt: string;
+  }[];
+  alerts: { level: AlertLevel; title: string; detail: string }[];
+};
+
+/** The whole reporting view in one request — see app/api/dashboard/route.ts. */
+export async function getDashboard(since: string) {
+  const { data } = await request<Dashboard>(
+    `/api/dashboard?since=${encodeURIComponent(since)}`,
+  );
+  return data;
+}

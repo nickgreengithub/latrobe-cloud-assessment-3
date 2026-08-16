@@ -22,6 +22,18 @@ import { annotateSpan } from "@/lib/otel";
 export const AGGREGATE_FEED = "__all__";
 
 /**
+ * Endpoints that exist only to report on the system, and are therefore not
+ * counted as traffic to it.
+ *
+ * The dashboard polls /api/dashboard every ten seconds. Left in the request
+ * log, it quickly becomes the busiest endpoint on the server, pushes real
+ * traffic out of the recent-activity list, and inflates the totals it is
+ * itself displaying — the monitoring drowning out the thing being monitored.
+ * The same reasoning applies to a Prometheus scrape every fifteen seconds.
+ */
+const MONITORING_PATHS = new Set(["/api/dashboard", "/api/metrics"]);
+
+/**
  * Identifies a caller without storing who they are.
  *
  * "Unique clients" is a required metric, but an IP address is personal
@@ -59,6 +71,8 @@ export function recordRequest(
   startedAt: number,
 ): void {
   const { pathname } = new URL(request.url);
+  if (MONITORING_PATHS.has(pathname)) return;
+
   const durationMs = Date.now() - startedAt;
   const route = routeLabel(pathname);
 
