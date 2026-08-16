@@ -9,6 +9,7 @@ import {
   recordFeedFetch,
   recordRequest,
 } from "@/lib/metrics";
+import { withSpan } from "@/lib/otel";
 
 /**
  * GET /rss — the aggregate channel.
@@ -25,12 +26,17 @@ export async function GET(request: NextRequest) {
 
   await recordPoll(url.searchParams.get("subscriber"));
 
-  const posts = await prisma.post.findMany({
-    where: { status: "published" },
-    include: POST_INCLUDE,
-    orderBy: { pubDate: "desc" },
-    take: limit,
-  });
+  const posts = await withSpan(
+    "rss.load_items",
+    { "rss.feed": AGGREGATE_FEED, "rss.limit": limit },
+    () =>
+      prisma.post.findMany({
+        where: { status: "published" },
+        include: POST_INCLUDE,
+        orderBy: { pubDate: "desc" },
+        take: limit,
+      }),
+  );
 
   const xml = renderRssFeed(
     {

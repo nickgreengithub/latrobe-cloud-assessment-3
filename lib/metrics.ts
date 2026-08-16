@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/db";
+import { promMetrics, routeLabel } from "@/lib/prom";
+import { annotateSpan } from "@/lib/otel";
 
 /**
  * Request and feed telemetry, shared by the API route wrapper and the RSS
@@ -45,20 +47,44 @@ export function feedSlugFromPath(pathname: string): string | null {
   return match ? match[1] : null;
 }
 
-/** Writes one RequestLog row. Never throws. */
+/**
+ * Records one request everywhere it needs to go: a RequestLog row for the
+ * dashboard's per-feed and per-client breakdowns, Prometheus counters for the
+ * time series, and attributes on the active trace span so a slow request in
+ * Jaeger says which feed it was serving. Never throws.
+ */
 export function recordRequest(
   request: Request,
   statusCode: number,
   startedAt: number,
 ): void {
   const { pathname } = new URL(request.url);
+  const durationMs = Date.now() - startedAt;
+  const route = routeLabel(pathname);
+
+  try {
+    promMetrics.requests.inc({
+      route,
+      method: request.method,
+      status: String(statusCode),
+    });
+    promMetrics.duration.observe({ route }, durationMs);
+    annotateSpan({
+      "rss.route": route,
+      "rss.status_code": statusCode,
+      "rss.duration_ms": durationMs,
+    });
+  } catch {
+    // Telemetry must never break the response.
+  }
+
   void prisma.requestLog
     .create({
       data: {
         method: request.method,
         path: pathname,
         statusCode,
-        durationMs: Date.now() - startedAt,
+        durationMs,
         userAgent: request.headers.get("user-agent"),
         feedSlug: feedSlugFromPath(pathname),
         clientKey: clientKeyFrom(request),
@@ -76,6 +102,20 @@ export function recordFeedFetch(input: {
   error?: string | null;
   clientKey?: string | null;
 }): void {
+  try {
+    promMetrics.feedPolls.inc({
+      feed: input.feedSlug,
+      status: String(input.statusCode),
+    });
+    promMetrics.feedItems.observe({ feed: input.feedSlug }, input.itemCount ?? 0);
+    annotateSpan({
+      "rss.feed": input.feedSlug,
+      "rss.feed.items": input.itemCount ?? 0,
+    });
+  } catch {
+    // As above — a metric must never cost us a feed delivery.
+  }
+
   void prisma.feedFetch
     .create({
       data: {
