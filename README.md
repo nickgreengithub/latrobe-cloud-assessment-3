@@ -45,6 +45,29 @@ Prometheus metrics, and end-to-end, load and accessibility testing.
     └──────────────────────────────┘
 ```
 
+Assessment 3 adds the layer that watches all of it:
+
+```
+    ┌──────────────────────────────┐
+    │  Dashboard  /dashboard       │   health, alerts, per-feed and
+    └───────────────┬──────────────┘   per-client reporting
+                    │  /api/dashboard — one collection, one point in time
+                    ▼
+    ┌──────────────────────────────┐
+    │  RequestLog  ·  FeedFetch    │   every request and every feed delivery
+    └──────────────────────────────┘
+
+    rss-server ──OTLP/HTTP──▶ otel-collector ──▶ Jaeger      :16686  traces
+         ▲
+         └──────── scrape /api/metrics ──────── Prometheus   :9090   metrics
+```
+
+Traces answer "what happened inside this one request"; metrics answer "what is
+happening across all of them"; the database answers "which feed, which client,
+how many items". The application exports OTLP and knows nothing about its
+telemetry backend — replacing Jaeger is a change to
+`otel-collector-config.yaml`, not to application code.
+
 Everything runs in **one container**. SQLite was chosen over a separate database
 service deliberately: a single process has no start-up ordering to get wrong,
 and the data still persists because the database file lives on a named volume
@@ -59,6 +82,15 @@ rather than in the container layer.
 ```bash
 docker compose up --build
 ```
+
+This starts four services:
+
+| Service | Port | What it is |
+| --- | --- | --- |
+| `rss-server` | 3000 | the application, its API and the SQLite database |
+| `jaeger` | 16686 | trace inspection UI |
+| `prometheus` | 9090 | metrics queries |
+| `otel-collector` | 4318 | receives OTLP from the app, fans it out |
 
 Then open <http://localhost:3000>. The entrypoint applies migrations and seeds
 the baseline channels before starting the server, so a clean checkout with an
@@ -93,12 +125,14 @@ npm run dev
 | `npm run db:seed` | seed baseline data (idempotent) |
 | `npm run db:studio` | browse the database in Prisma Studio |
 | `npm run db:reset` | drop and rebuild the database |
+| `npx playwright test` | end-to-end tests (starts its own server) |
+| `./load/run-stages.sh` | staged JMeter load test |
 
 ---
 
 ## Database schema
 
-Prisma with SQLite. Seven models, each earning its place in the RSS use case.
+Prisma with SQLite. Eight models, each earning its place in the RSS use case.
 
 | Model | Represents | Notable relationships |
 | --- | --- | --- |
@@ -108,7 +142,8 @@ Prisma with SQLite. Seven models, each earning its place in the RSS use case.
 | `FeedPost` | Explicit join: which posts are in which channels | carries `assignedAt` |
 | `Enclosure` | Attached media (`<enclosure>`) | cascades with its post |
 | `Subscriber` | A registered RSS client | powers polling stats |
-| `RequestLog` | One row per API request | powers `/api/count` |
+| `RequestLog` | One row per HTTP request, including feed polls | powers `/api/count` and `/dashboard` |
+| `FeedFetch` | One row per RSS feed delivery | items served, duration, feed-level errors |
 
 Decisions worth stating:
 
@@ -127,6 +162,16 @@ Decisions worth stating:
   that renders a feed.
 - **`status` is a string with a documented union** (`draft` | `published`)
   because SQLite has no native enum type.
+- **`RequestLog.clientKey` is a hash, not an address.** Counting unique clients
+  needs to tell callers apart, not know who they are, so it stores the first 16
+  characters of `sha256(ip + user-agent)`. The count is exact and there is no
+  personal information in the database to protect.
+- **`FeedFetch` is separate from `RequestLog`** because they answer different
+  questions. `RequestLog` records that an HTTP request happened and what status
+  it returned; `FeedFetch` records what the feed itself did — how many items
+  went out, and whether the channel was unknown or merely empty. A feed
+  returning 200 with zero items is invisible in HTTP terms and is exactly the
+  failure worth alerting on.
 
 ---
 
@@ -163,10 +208,21 @@ for an unknown channel slug.
 | `/api/health` | Heartbeat. Real `SELECT 1` probe; returns **503** and `status: "degraded"` if the database is unreachable. |
 | `/api/count` | Request counts from `RequestLog` — totals, per-path and per-status breakdowns, timing. Accepts `?since=1h`. |
 | `/api/stats` | Feed statistics — posts per channel, posts per author, draft/published split, subscriber polling. |
+| `/api/dashboard` | Everything `/dashboard` needs, collected in one pass. Accepts `?since=15m\|1h\|24h\|7d`. |
+| `/api/metrics` | Prometheus text exposition — request, feed poll, duration and unique-client series. |
 
-Request logging is written by the shared route wrapper rather than by
-`proxy.ts`, because Next's proxy runs on the Edge runtime and cannot open a
-database connection. It is fire-and-forget: telemetry can never fail a request.
+Request logging is written by `lib/metrics.ts` rather than by `proxy.ts`,
+because Next's proxy runs on the Edge runtime and cannot open a database
+connection. It is fire-and-forget: telemetry can never fail a request.
+
+The RSS routes call it themselves. They return XML directly and never pass
+through the API wrapper, so until Assessment 3 the busiest route on the server
+— the feed poll — was the one route the metrics could not see.
+
+`/api/dashboard` and `/api/metrics` are excluded from the request log. The
+dashboard polls every ten seconds and Prometheus scrapes every fifteen; left
+in, they become the busiest endpoints on the server within a minute and
+inflate the very totals they are reporting.
 
 ### RSS
 
@@ -197,6 +253,7 @@ curl -X POST http://localhost:3000/api/posts \
 | `/feeds` | Post browser — search and channel filter run server-side |
 | `/feeds/[id]` | Post detail, rendered on demand |
 | `/feeds/new` | Publish a post to one or more channels |
+| `/dashboard` | **Operational dashboard** — health, alerts, reporting views |
 | `/client` | **RSS Client** — subscribes to the feeds over HTTP |
 | `/about` | Student details and walkthrough video |
 | `/settings` | Theme, layout density, server connection check |
@@ -216,6 +273,96 @@ being dressed up as one.
 
 ---
 
+## Observability
+
+### The dashboard
+
+`/dashboard` reads one endpoint, not three. The alternative — the browser
+calling `/api/health`, `/api/count` and `/api/stats` and stitching the results
+together — is three round trips that must agree with each other, which is
+three chances to render a panel contradicting the panel beside it. One
+collection, one point in time.
+
+The first snapshot is rendered on the server, so the page arrives populated
+rather than empty-then-filled; the client polls from there.
+
+Panels: health and uptime · rule-based alerts · totals (requests, unique
+clients, feed polls, items served, latency, error rate) · requests per feed ·
+feed status table · requests per endpoint · requests per client · response
+codes · stored content · recent activity.
+
+**Alerts have two levels.** A warning says something is drifting — error rate
+above 2%, a channel that served zero items, a request past one second. A
+critical says someone has to act — the database is unreachable, or errors are
+above 10%. A single threshold only ever tells you once it is already too late.
+
+### Tracing
+
+`instrumentation.ts` at the project root registers the OpenTelemetry Node SDK.
+**It must be at the root** — Next only looks for it there, and a copy under
+`app/` silently exports nothing.
+
+Next instruments its own request handling, so every request already produces a
+root span. What it cannot know is what this application is doing, so the spans
+that matter are added by hand in `lib/otel.ts`:
+
+| Span | Where | Answers |
+| --- | --- | --- |
+| `api <METHOD> <route>` | `handle()` | which handler ran, and how long it took |
+| `rss.lookup_channel` | `/rss/[slug]` | was the channel resolution slow |
+| `rss.load_items` | both RSS routes | was the item query slow |
+| `dashboard.aggregate` | `lib/dashboard.ts` | which dashboard query is expensive |
+
+A slow feed then shows *which part* was slow, rather than only that it was.
+
+### Metrics
+
+`/api/metrics` exposes `rss_requests_total`, `rss_request_duration_ms`,
+`rss_feed_polls_total`, `rss_feed_items` and `rss_unique_clients`, plus Node
+process metrics. Route labels collapse `/rss/careers` to `/rss/[slug]`: a
+label per channel or per post id is unbounded cardinality, which is the usual
+way a Prometheus instance is brought down.
+
+Per-client breakdowns are deliberately **not** Prometheus labels — those come
+from the database, where a high-cardinality dimension belongs.
+
+---
+
+## Testing
+
+| Tool | What it covers | Where |
+| --- | --- | --- |
+| Playwright | 10 end-to-end tests, server and client use cases | `e2e/` |
+| JMeter | staged load, x1 → x10000 | `load/` |
+| Lighthouse | accessibility and performance, before and after | `docs/lighthouse/` |
+
+```bash
+npx playwright test           # starts its own production build
+./load/run-stages.sh          # needs a server on :3100 and JMeter installed
+```
+
+The end-to-end tests drive the real interface and then check the API **and the
+published RSS** agree with it — a UI test that asserts only on the UI can pass
+while the feed it is supposed to publish stays empty. One test polls a feed
+and then asserts the dashboard's count moved, which checks the dashboard's
+central claim end to end.
+
+Load testing found that nothing degrades until roughly two thousand concurrent
+clients, where latency rises about twentyfold while throughput also rises and
+no request fails — queueing rather than breakage, most likely SQLite
+serialising the `RequestLog` write. Full analysis, including an honest account
+of why the x10000 stage is 10,000 sessions rather than 10,000 concurrent
+threads, is in [`load/README.md`](load/README.md).
+
+The accessibility review is in [`docs/accessibility.md`](docs/accessibility.md).
+Its headline: all four pages scored **100 for accessibility before any change
+was made, and all four still had a real defect** — a Lighthouse score is a
+floor, not a verdict.
+
+Deployment to EC2 is documented in [`docs/deployment.md`](docs/deployment.md).
+
+---
+
 ## Environment variables
 
 | Variable | Default | Purpose |
@@ -224,20 +371,31 @@ being dressed up as one.
 | `SITE_URL` | derived from the request | Absolute base for links inside the RSS feed. |
 | `NEXT_PUBLIC_API_BASE` | `""` (same origin) | Lets the client target a different server. |
 | `BUILD_TARGET` | unset | `static` builds the Assessment 1 GitHub Pages export. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318` | Collector address. `http://otel-collector:4318` in Compose. |
+| `OTEL_SERVICE_NAME` | `rss-server` | Name shown in Jaeger's service list. |
 
 ---
 
 ## Tech stack
 
 Next.js 16 (App Router) · React 19 · TypeScript · Prisma 7 with the
-better-sqlite3 driver adapter · SQLite · Zod · Docker
+better-sqlite3 driver adapter · SQLite · Zod · Docker · OpenTelemetry ·
+Jaeger · Prometheus · Playwright · JMeter
 
 ---
 
 ## Project continuity
 
 Assessment 1 established the frontend, usability and accessibility layer.
-Assessment 2 adds the API, database and Docker packaging. Assessment 3 builds on
-this with dashboard views, simulated input records, rule-based interpretation
-and reporting — which is why `RequestLog`, `Subscriber` and `/api/stats` already
-exist: the operational data those features need is being collected now.
+Assessment 2 added the API, database and Docker packaging, and started
+collecting operational data it did not yet display — `RequestLog`,
+`Subscriber` and `/api/stats` were built there in anticipation of this stage.
+
+Assessment 3 makes the running system observable and proves it works:
+`/dashboard` reads the data that was already being collected, `RequestLog`
+grew the two columns it turned out to be missing, `FeedFetch` records what the
+feeds themselves do, OpenTelemetry and Prometheus report on the system from
+the outside, and Playwright, JMeter and Lighthouse establish that it behaves
+under use.
+
+Assessment 4 presents this system live.

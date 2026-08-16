@@ -1,263 +1,156 @@
-# Assessment 2 — video script
+# Assessment 3 — video walkthrough script
 
-**Target: 6 minutes** (brief allows 3–8). Bracketed lines are actions, not narration.
+**Required:** 3–8 minutes, showing your **student ID card, your face and your
+voice**, plus the application and its key features. Aim for **7 minutes** —
+there is a lot to show and the marking is done alongside the live defence, so
+this is the artefact that has to stand on its own if anything goes wrong.
 
 ---
 
-## Pre-flight — do this before you hit record
+## Before you press record
+
+- [ ] `docker compose up -d --build` — all four services `Up`
+- [ ] Generate traffic so the dashboard is not empty:
+      `HOST=127.0.0.1 PORT=3000 ./load/run-stages.sh` (or a few dozen curls)
+- [ ] Tabs open, in this order: `/dashboard` · `/feeds` · `/client` ·
+      Jaeger `:16686` · Prometheus `:9090` · GitHub repo · terminal
+- [ ] Student ID card within reach
+- [ ] Terminal font large enough to read on a compressed recording
+- [ ] Notifications off, other tabs closed
+
+---
+
+## 0:00 — Identity (20s)
+
+> "Nicholas Green, student number 22840097, CSE5006 Assessment 3 — a
+> data-driven web application and reporting."
+
+Hold the student ID to camera. Face visible. Say the numbers aloud rather than
+only showing them.
+
+## 0:20 — What the system is (40s)
+
+One sentence of continuity, then move:
+
+> "This is an RSS server for university announcements. Assessment 1 built the
+> interface, Assessment 2 built the API, database and Docker packaging.
+> Assessment 3 is about knowing whether the thing is actually working — so
+> it's a dashboard, tracing, metrics, and three kinds of testing."
+
+Show the architecture diagram in the README briefly. Do not read it out.
+
+## 1:00 — The dashboard (2:00) ← **the largest single mark, spend the time**
+
+Open `/dashboard`. Work top to bottom and say what each thing is *for*:
+
+- **Health strip** — "`/health` returns 200, and this database figure is a
+  real `SELECT 1`, not an assumption. The container's own healthcheck polls
+  the same endpoint."
+- **Alerts** — "These are rules over the data, with two levels. A warning
+  means something is drifting; a critical means someone has to act. One
+  threshold only tells you once it's already too late." Point at a live
+  warning — the unknown-channel one is good: "someone's client is polling a
+  channel that doesn't exist, which is invisible unless something says so."
+- **Operational metrics** — total requests, requests in window, **unique
+  clients**, feed polls, items served, RSS channel count, latency, error rate.
+  Name them; these are the rubric's list.
+- **Requests per feed** — "measured per channel, not inferred from the path."
+- **Feed status table** — "posts stored, polls received, items in the last
+  delivery, and its state. A feed serving zero items is a 200 as far as HTTP
+  is concerned — that's why there's a separate table recording what the feed
+  did, not just what the response code was."
+- **Requests per client** — "identified by a hash of address and user agent,
+  so the count is real without the server storing who anyone is."
+
+**Then make it move.** In the terminal, `curl http://localhost:3000/rss` a few
+times, and watch the counters change on the next refresh. This is the single
+most convincing ten seconds in the video — it proves the numbers are live
+rather than rendered once.
+
+## 3:00 — Data and persistence (1:00)
+
+> "All of that comes out of the database, through Prisma."
+
+- Show `prisma/schema.prisma` — point at `RequestLog` (with `feedSlug` and
+  `clientKey`) and `FeedFetch`.
+- **Prove it from the database, not the UI** — expect this question in the
+  oral defence:
 
 ```bash
-cd ~/development/latrobe_cloud_assessment_1
-docker compose down          # optional: a fresh start looks better on camera
-docker compose up -d --build
-docker ps                    # wait until STATUS says (healthy)
+docker compose exec rss-server sh -c \
+  'sqlite3 /data/rss.db "select feedSlug, count(*) from RequestLog group by feedSlug;"'
 ```
 
-Then set the stage:
+> "Same numbers the dashboard is showing, straight out of SQLite."
 
-- **Settings page → turn OFF "compact list"** so post summaries are visible.
-- Open browser tabs in this order, left to right:
-  1. `localhost:3000` 2. `localhost:3000/feeds` 3. `localhost:3000/client`
-  4. `localhost:3000/rss` 5. `localhost:3000/api/health` 6. `localhost:3000/api/stats`
-- Have a terminal window ready, font size **16pt+** so it reads on video.
-- Open `prisma/schema.prisma` in your editor.
-- Have your student ID card in reach.
+## 4:00 — Tracing and metrics (1:00)
 
-Have this command copied ready to paste:
+- **Jaeger** `:16686` → service `rss-server` → find a trace → expand it.
+  > "Next instruments its own request handling automatically. These
+  > — `rss.lookup_channel`, `rss.load_items` — are spans I added by hand, so
+  > when a feed is slow I can see whether it was the database or the render."
+- **Prometheus** `:9090` → query `rss_feed_polls_total` → Graph.
+  > "Per channel, over time. The app exports OTLP to a collector and the
+  > collector decides where it goes — swapping Jaeger out doesn't touch
+  > application code."
+- Show `/targets` — all three up.
 
-```bash
-curl -s -o /tmp/r.json -w 'HTTP %{http_code}\n' -X POST http://localhost:3000/api/posts \
-  -H 'Content-Type: application/json' \
-  -d '{"title":"Live demo post","summary":"Created on camera.","content":"Written to SQLite and published as RSS.","authorName":"Careers & Employability","feedSlugs":["careers"]}'
-python3 -c "
-import json;d=json.load(open('/tmp/r.json'))['data']
-print(' title  :',d['title']); print(' id     :',d['id'])
-print(' channel:',[f['slug'] for f in d['feeds']]); print(' author :',d['author']['name'])"
-```
+## 5:00 — Testing (1:15)
 
-> Raw \`curl\` prints the JSON body but **not** the status code, and the full
-> record is an unreadable wall of text on video. The \`-w\` flag prints
-> \`HTTP 201\` and the second command shows four readable lines instead of forty.
+- **Playwright** — run it live if you are confident, or show a recorded pass:
+  ```bash
+  npx playwright test
+  ```
+  > "Ten tests. The server use case creates an announcement through the real
+  > form, then checks the API *and the published RSS* agree — a UI test that
+  > only checks the UI can pass while the feed stays empty. The client use
+  > case fetches and renders a feed. One test polls a feed and then asserts
+  > the dashboard's count moved."
+- **JMeter** — show `load/results/summary.md`:
+  > "x1 through x1000, nothing moves — 3 or 4 milliseconds. At two thousand
+  > concurrent clients the mean goes to 58 and the p99 to 149, but throughput
+  > goes *up* and nothing fails. That's queueing, not breaking, and it's
+  > SQLite serialising the request-log write."
+  > "The x10000 stage is 10,000 sessions at 2,000 concurrency, because my
+  > machine won't create more than about 4,100 OS threads. That's the load
+  > generator hitting a limit, not the server — the server never failed a
+  > request."
+  Being upfront about this reads as competence, not as a shortfall.
+- **Lighthouse** — open a before and after report side by side:
+  > "Accessibility scored 100 on every page before I changed anything — and
+  > every page was still failing the label/name mismatch check, because that
+  > audit doesn't carry any score weight. The header link announced 'Home'
+  > while the screen said something else, so anyone using voice control
+  > couldn't activate it by reading it. Fixed by letting the visible text be
+  > the accessible name. A Lighthouse score is a floor, not a verdict."
 
----
+## 6:15 — Repository and CI (30s)
 
-## 0:00 — Identity (30s)
+- GitHub: show the **branch list and the merged pull requests** — one branch
+  per feature, clean `main`, no `node_modules`.
+- Show `.github/workflows/ci.yml`:
+  > "Every pull request lints, type checks, builds, runs the end-to-end tests
+  > and builds the container image before it can merge. Main is gated, not
+  > trusted."
 
-> [**Face to camera, holding student ID up**]
->
-> "Hi, I'm Nicholas Green, student number 22840097, and this is my Assessment 2
-> submission for Cloud Web Applications.
->
-> Assessment 1 was the frontend. Assessment 2 puts a real server behind it — a
-> database, a REST API, RSS output, and the whole thing running in Docker. I'll
-> show you the server sending feeds to a client, and then how it works underneath."
+## 6:45 — Close (15s)
 
----
-
-## 0:30 — It runs in Docker (45s)
-
-> [**Switch to terminal. Type `docker ps`**]
->
-> "The application is running in a Docker container right now. You can see the
-> status here reads **healthy** — that's not Docker just checking the process is
-> alive. It's polling my own healthcheck endpoint every fifteen seconds."
-
-> [**Type `docker compose logs --tail 20 rss-server`**]
->
-> "And on start-up the container applies its database migrations and seeds the
-> baseline channels before the server boots. So `docker compose up` on a clean
-> machine gives you a working server — there's no manual setup step."
-
----
-
-## 1:15 — The heartbeat and the database probe (45s)
-
-> [**Browser tab: `localhost:3000/api/health`**]
->
-> "This is the healthcheck Docker is polling. Notice it's not just returning
-> 'ok'. It runs an actual `SELECT 1` against the database and reports the
-> latency — seven milliseconds here. If the database were unreachable this
-> returns a 503 and the container gets marked unhealthy. A healthcheck that
-> returns 200 no matter what tells an operator nothing."
+> "That's the RSS server with a data-driven dashboard, OpenTelemetry tracing,
+> Prometheus metrics, and Playwright, JMeter and Lighthouse testing. Running
+> in Docker, deployed on EC2. Thanks."
 
 ---
 
-## 2:00 — The schema (60s)
+## If something breaks on camera
 
-> [**Editor: `prisma/schema.prisma` — in VS Code, `Cmd+P` then type `schema.prisma`.
-> Scroll slowly through the models.**]
->
-> "The database is SQLite through Prisma. Seven models, and each one earns its
-> place in the RSS use case.
->
-> `Feed` is a channel — and deliberately, the channel *is* the category.
-> `/rss/careers` **is** the Careers feed, so a separate category table would
-> have been duplication.
->
-> `Post` is an RSS item. `Author` is the poster.
->
-> [**Point at `FeedPost`**] This is an explicit many-to-many join rather than an
-> implicit one, so it can carry its own data — and it means one post can go to
-> several channels. An internship notice is both Careers and General.
->
-> [**Point at `onDelete: SetNull` on the author relation**] The delete rules are
-> deliberate too. Removing an author sets null rather than cascading — deleting
-> a person shouldn't destroy everything they published. But enclosures and join
-> rows *do* cascade, so nothing is orphaned.
->
-> [**Point at `@@index([status, pubDate])`**] And that composite index is
-> precisely the query that renders a feed."
+Keep recording and narrate it. "That's a 500 — let me look at the logs" and
+then finding it is worth more than a clean take, and this same system has to
+survive live questioning in Assessment 4 anyway.
 
-**Optional — show the real rows** (a stronger shot than Prisma Studio, because it
-reads the live database inside the running container):
+## Things not to do
 
-```bash
-docker exec rss-server node --experimental-sqlite -e "
-const {DatabaseSync}=require('node:sqlite');
-const db=new DatabaseSync('/data/rss.db');
-for (const t of ['Feed','Post','Author','FeedPost','Enclosure','Subscriber','RequestLog'])
-  console.log(t.padEnd(12), db.prepare('SELECT COUNT(*) c FROM '+t).get().c);
-"
-```
-
-> "And those models aren't theoretical — here are the actual row counts from the
-> database inside the container. Five channels, three posts, and four rows in
-> the join table, because one post belongs to two channels."
-
-> **Do NOT run `npm run db:studio` on camera.** It reads `DATABASE_URL` from
-> `.env`, which points at the local `./dev.db` — a *different* database from the
-> container's `/data/rss.db`. They look almost identical, so the mistake is easy
-> to miss, but a post you create on camera will not appear in Studio. If you
-> want the Studio GUI, snapshot the live database first:
->
-> ```bash
-> docker cp rss-server:/data/rss.db /tmp/live.db
-> DATABASE_URL="file:/tmp/live.db" npx prisma studio   # opens localhost:5555
-> ```
-
----
-
-## 3:00 — CRUD over the API (60s)
-
-> [**Terminal. Paste the prepared POST command, hit enter.**]
->
-> "Here's a create through the REST API. It comes back **201**, and you can see
-> the server has given it an ID and attached it to the Careers channel."
-
-> [**Type `curl -s localhost:3000/api/posts | head -c 400`**]
->
-> "Every endpoint returns the same envelope — `ok`, `data`, `meta`, `error` — so
-> the frontend never has to guess the shape of a response. The `meta` block
-> carries the paging totals."
-
-> [**Type: `curl -s -X POST localhost:3000/api/posts -H 'Content-Type: application/json' -d '{"title":"x"}' -o /dev/null -w "%{http_code}\n"`**]
->
-> "And the status codes are meaningful — that's a **422**, validation failure.
-> Missing record gives 404, duplicate slug gives 409."
-
----
-
-## 4:00 — The money shot: server → client (75s)
-
-> [**Browser tab: `localhost:3000/rss`**]
->
-> "This is the RSS server output. Valid RSS 2.0 — channel metadata, and one item
-> per announcement. The dates are RFC-822 format, which the spec requires, and
-> the text is CDATA-wrapped so ampersands and smart quotes can't break the XML."
-
-> [**Browser tab: `localhost:3000/client`**]
->
-> "And this is the RSS Client. This page is a *subscriber* — it's not reading
-> the database. It makes an HTTP request to `/rss`, gets XML back, and parses it
-> with DOMParser exactly like any third-party feed reader would.
->
-> You can see the transport details up here — 200, the round-trip time, the
-> payload size."
-
-> [**Click `/rss/careers`, then `/rss/events`**]
->
-> "And subscribing to a different category just means pointing the client at a
-> different endpoint. Careers. Events. Same client, different URL — that's the
-> whole story. Nothing else changes."
-
-> [**Click "Raw RSS 2.0 response" → Show**]
->
-> "And here's the raw XML it received, so you can see this is genuinely RSS
-> crossing the network, not an internal function call dressed up as one."
-
----
-
-## 5:15 — Frontend integration and operational output (45s)
-
-> [**Browser tab: `localhost:3000/feeds` — refresh**]
->
-> "The Assessment 1 interface is intact — same components, same themes, same
-> hamburger menu. What changed is where the data comes from. The local storage
-> layer is deleted; this list is the database, read through the API. There's the
-> post I created in the terminal a minute ago.
->
-> Searching and filtering are pushed down to the server as query parameters, not
-> filtering a local copy."
-
-> [**Browser tab: `localhost:3000/api/stats`**]
->
-> "And there's a second operational endpoint — posts per channel, per author,
-> and subscriber polling. Alongside `/api/count`, which reports request totals
-> and timings from a log the API writes on every call."
-
----
-
-## 6:00 — Persistence and repository (45s)
-
-> [**Terminal: `docker compose down && docker compose up -d`, wait, then refresh `/feeds`**]
->
-> "One last thing — the database lives on a named Docker volume, not inside the
-> container. So I can destroy and recreate the container, and the post I created
-> is still there."
-
-> [**Browser: your GitHub repo → Pull requests → Closed**]
->
-> "And the repository has each feature on its own branch, merged through pull
-> requests, with CI that lints, type-checks and builds the container image on
-> every push.
->
-> That's Assessment 2 — thanks for watching."
-
----
-
-## Timing check
-
-| Section | Runs | Cumulative |
-| --- | --- | --- |
-| Identity | 0:30 | 0:30 |
-| Docker | 0:45 | 1:15 |
-| Healthcheck | 0:45 | 2:00 |
-| Schema | 1:00 | 3:00 |
-| CRUD | 1:00 | 4:00 |
-| **Server → Client** | 1:15 | 5:15 |
-| Integration + stats | 0:45 | 6:00 |
-| Persistence + repo | 0:45 | 6:45 |
-
-Comfortably inside the 3–8 minute window with room to breathe.
-
----
-
-## If you run short on time
-
-Cut in this order: the schema walk-through to 30 seconds, then the persistence
-demo, then `/api/stats`.
-
-**Never cut:** your ID and face, `docker ps` showing healthy, and the
-`/client` page switching channels. Those three cover the criteria the rubric
-names explicitly.
-
----
-
-## Common on-camera failures
-
-- **Nothing loads.** Another container may have taken port 3000 — `docker ps`
-  and check. `markovcast-frontend` was the culprit before.
-- **`/client` shows an error.** The container is still starting; wait for
-  `docker ps` to say healthy.
-- **Stale content in the browser.** Hard reload with `Cmd+Shift+R`.
-- **Summaries missing from post rows.** Compact list is on in Settings.
+- Don't read the README aloud. Show the running system.
+- Don't skip the "make the counters move" moment to save time — cut something
+  else.
+- Don't claim 10,000 concurrent clients. Say what actually happened.
+- Don't spend more than a minute on Assessment 1 and 2 material.

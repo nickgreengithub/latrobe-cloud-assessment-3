@@ -41,8 +41,13 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 ENV DATABASE_URL="file:/data/rss.db"
 
+# curl backs the HEALTHCHECK below. sqlite3 is here so the stored data can be
+# inspected from inside the running container with plain SQL — being able to
+# show the rows behind the dashboard is the difference between claiming
+# persistence and demonstrating it, and it is not something you want to
+# discover is missing during a live demonstration.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      openssl ca-certificates curl \
+      openssl ca-certificates curl sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Run as a non-root user. The database lives on a volume at /data, which must be
