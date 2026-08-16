@@ -1,14 +1,16 @@
-# La Trobe RSS Server — Assessment 2
+# La Trobe RSS Server — Assessment 3
 
-**Nicholas Green · 22840097 · CSE2CWA / CSE5CWA**
+**Nicholas Green · 22840097 · CSE5006**
 
 An RSS server for university announcements, and the LMS-style client that
 subscribes to it. Announcements are authored through a web interface, stored in
 a relational database, exposed over a REST API, and published as valid **RSS
 2.0** that any standards-compliant reader can consume.
 
-Assessment 1 built the frontend. Assessment 2 adds everything behind it: the
-schema, the API, the RSS output and the Docker packaging.
+Assessment 1 built the frontend. Assessment 2 added everything behind it: the
+schema, the API, the RSS output and the Docker packaging. Assessment 3 makes the
+running system observable — a data-driven dashboard, OpenTelemetry tracing,
+Prometheus metrics, and end-to-end, load and accessibility testing.
 
 ---
 
