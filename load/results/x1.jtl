@@ -1,0 +1,61 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1786921095336,51,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,46,0,12
+1786921095390,13,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,13,0,0
+1786921095403,4,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,4,0,0
+1786921095407,5,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,5,0,1
+1786921095413,5,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,5,0,0
+1786921095418,3,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,3,0,0
+1786921095421,5,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,4,0,1
+1786921095426,4,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,4,0,0
+1786921095431,3,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,3,0,0
+1786921095434,5,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,5,0,1
+1786921095439,4,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,4,0,0
+1786921095443,2,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,0
+1786921095446,3,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,3,0,0
+1786921095450,4,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,4,0,0
+1786921095454,3,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,3,0,1
+1786921095457,4,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,4,0,1
+1786921095461,4,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,4,0,1
+1786921095465,3,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,3,0,0
+1786921095468,3,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,3,0,0
+1786921095471,4,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,4,0,1
+1786921095475,3,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,3,0,0
+1786921095478,3,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,3,0,0
+1786921095482,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095486,3,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,3,0,0
+1786921095489,3,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,3,0,0
+1786921095493,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095497,2,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,0
+1786921095499,4,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,4,0,1
+1786921095503,4,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,4,0,0
+1786921095507,2,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,0
+1786921095509,3,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,3,0,1
+1786921095513,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095516,3,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,3,0,1
+1786921095519,4,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,4,0,1
+1786921095524,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095528,2,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,0
+1786921095530,4,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,4,0,1
+1786921095534,4,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095538,2,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,0
+1786921095540,4,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,4,0,1
+1786921095544,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095548,2,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,0
+1786921095550,4,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,3,0,0
+1786921095554,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095557,3,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,1
+1786921095560,3,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,3,0,0
+1786921095563,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095567,2,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,0
+1786921095569,3,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,3,0,0
+1786921095573,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095576,2,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,0
+1786921095578,4,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,4,0,1
+1786921095582,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095586,2,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,0
+1786921095588,4,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,4,0,1
+1786921095592,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095596,2,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,2,0,0
+1786921095598,4,GET /rss (aggregate feed),200,OK,RSS clients 1-1,text,true,,4256,115,1,1,http://127.0.0.1:3100/rss,3,0,0
+1786921095602,3,GET /rss/careers (single channel),200,OK,RSS clients 1-1,text,true,,2229,123,1,1,http://127.0.0.1:3100/rss/careers,3,0,0
+1786921095605,3,GET /api/health,200,OK,RSS clients 1-1,text,true,,420,122,1,1,http://127.0.0.1:3100/api/health,3,0,1

@@ -55,7 +55,15 @@ export function Header() {
   return (
     <header className="site-header">
       <div className="app-frame site-header-main">
-        <Link href="/" className="brand-block" aria-label="Home">
+        {/*
+          No aria-label here. One used to override the visible title with
+          "Home", which Lighthouse flags as a label/name mismatch: a screen
+          reader announced "Home" while the screen said "Assessment 3 —
+          Data-driven Web Application", and anyone driving the page by voice
+          could not activate the link by reading it aloud. Letting the visible
+          text be the accessible name keeps the two the same thing.
+        */}
+        <Link href="/" className="brand-block">
           <span className="brand-mark" aria-hidden="true">
             <RssIcon />
           </span>
