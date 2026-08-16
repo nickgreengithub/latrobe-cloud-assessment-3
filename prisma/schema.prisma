@@ -115,7 +115,15 @@ model Subscriber {
   createdAt    DateTime  @default(now())
 }
 
-/// One row per /api request, written by the route wrapper. Powers /api/count.
+/// One row per HTTP request, written by the route wrapper and the RSS routes.
+/// Powers /api/count and the operational tiles on /dashboard.
+///
+/// Assessment 3 added two columns. `feedSlug` is set when the request was a
+/// feed poll, which is what makes "requests per feed" a measured figure rather
+/// than an inference from the path string. `clientKey` is a truncated hash of
+/// the caller's address and user-agent — enough to count unique clients
+/// without storing an address, which would be personal information this
+/// assessment has no reason to keep.
 model RequestLog {
   id         String   @id @default(cuid())
   method     String
@@ -123,8 +131,33 @@ model RequestLog {
   statusCode Int
   durationMs Int
   userAgent  String?
+  feedSlug   String? /// set for /rss and /rss/[slug] polls
+  clientKey  String? /// sha256(ip + user-agent), first 16 chars
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
   @@index([path])
+  @@index([feedSlug])
+  @@index([clientKey])
+}
+
+/// One row per RSS feed delivery — the feed-level view RequestLog cannot give.
+///
+/// RequestLog records that an HTTP request happened and what it returned.
+/// This records what the feed itself did: how many items went out, how long
+/// the render took, and whether the channel was unknown or simply empty. The
+/// dashboard's feed status table and its "feed served no items" alert are both
+/// built from these rows.
+model FeedFetch {
+  id         String   @id @default(cuid())
+  feedSlug   String /// "__all__" for the aggregate /rss channel
+  statusCode Int
+  itemCount  Int      @default(0)
+  durationMs Int      @default(0)
+  error      String?
+  clientKey  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([feedSlug])
 }
