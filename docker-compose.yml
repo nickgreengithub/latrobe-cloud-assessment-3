@@ -1,12 +1,26 @@
-# Single service: the Next.js server, its API and the SQLite database all run
-# in one container. SQLite keeps the whole application to one process with no
-# start-up ordering to get wrong, and the database file lives on a named volume
-# so content survives `docker compose down`.
+# The application and its observability stack.
+#
+# rss-server holds the Next.js server, its API and the SQLite database in one
+# container: SQLite keeps the application to a single process with no start-up
+# ordering to get wrong, and the database file lives on a named volume so
+# content survives `docker compose down`.
+#
+# The other three services are the Assessment 3 addition. The application never
+# talks to Jaeger or Prometheus directly — it emits OTLP to the collector, and
+# the collector decides where telemetry goes. Swapping Jaeger for something
+# else is then a change to otel-collector-config.yaml rather than to the app.
+#
+#   rss-server ──OTLP/HTTP──▶ otel-collector ──▶ jaeger      (traces)
+#        ▲
+#        └────────────scrape /api/metrics──── prometheus      (metrics)
+#
+# All images are pinned. An unpinned :latest silently changed the collector's
+# config format underneath this stack once already.
 
 services:
   rss-server:
     build: .
-    image: latrobe-rss-server:2.0.0
+    image: latrobe-rss-server:3.0.0
     container_name: rss-server
     ports:
       - "3000:3000"
@@ -16,8 +30,57 @@ services:
       # Absolute URLs inside the RSS feed. Change this when serving from a
       # different host so <link> and <guid> stay resolvable for clients.
       SITE_URL: "http://localhost:3000"
+      # Service name as it appears in Jaeger's service dropdown.
+      OTEL_SERVICE_NAME: "rss-server"
+      # The collector, by compose service name — not localhost, which inside
+      # this container would mean the container itself.
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
     volumes:
       - rss-data:/data
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  # Receives OTLP from the application and forwards it. The contrib image
+  # rather than core: core omits several exporters, including the one used
+  # here, and fails at start-up with an unhelpful "unknown type" error.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.145.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4318:4318" # OTLP/HTTP — what the app exports to
+      - "4317:4317" # OTLP/gRPC
+      - "8889:8889" # collector's own metrics, scraped by Prometheus
+      - "13133:13133" # health check extension
+    depends_on:
+      - jaeger
+    restart: unless-stopped
+
+  # Trace storage and UI. In-memory storage is deliberate: traces are for the
+  # live demonstration, and persisting them would mean another volume and
+  # another thing to run out of disk on the EC2 box.
+  jaeger:
+    image: jaegertracing/jaeger:2.14.0
+    container_name: jaeger
+    ports:
+      - "16686:16686" # Jaeger UI
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.9.1
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=6h"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - rss-server
     restart: unless-stopped
 
 volumes:
