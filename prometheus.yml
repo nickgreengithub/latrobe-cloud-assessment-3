@@ -1,0 +1,32 @@
+# Prometheus scrape configuration.
+#
+# Two targets: the application's own metrics, and the collector's metrics
+# about the telemetry pipeline itself. The second one is what tells you
+# whether missing traces are the app's fault or the collector's.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # The application. /api/metrics is deliberately outside the JSON API
+  # wrapper, so these scrapes do not appear in the request counts they are
+  # reporting on.
+  - job_name: "rss-server"
+    metrics_path: /api/metrics
+    static_configs:
+      - targets: ["rss-server:3000"]
+        labels:
+          component: application
+
+  - job_name: "otel-collector"
+    static_configs:
+      - targets: ["otel-collector:8889"]
+        labels:
+          component: telemetry
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          component: telemetry
