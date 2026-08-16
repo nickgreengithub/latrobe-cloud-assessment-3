@@ -4,6 +4,7 @@ import { POST_INCLUDE, serializePost } from "@/lib/serialize";
 import { RSS_HEADERS, readFeedLimit, recordPoll, renderRssFeed } from "@/lib/rss";
 import { siteUrlFrom } from "@/lib/site";
 import { clientKeyFrom, recordFeedFetch, recordRequest } from "@/lib/metrics";
+import { withSpan } from "@/lib/otel";
 
 /**
  * GET /rss/[slug] — one channel, e.g. /rss/careers.
@@ -21,7 +22,9 @@ export async function GET(
   const siteUrl = siteUrlFrom(request);
   const clientKey = clientKeyFrom(request);
 
-  const feed = await prisma.feed.findUnique({ where: { slug } });
+  const feed = await withSpan("rss.lookup_channel", { "rss.feed": slug }, () =>
+    prisma.feed.findUnique({ where: { slug } }),
+  );
 
   // A client asking for a channel that does not exist should be told so,
   // rather than handed a valid but empty feed it would poll forever.
@@ -42,12 +45,17 @@ export async function GET(
 
   await recordPoll(url.searchParams.get("subscriber"));
 
-  const posts = await prisma.post.findMany({
-    where: { status: "published", feeds: { some: { feedId: feed.id } } },
-    include: POST_INCLUDE,
-    orderBy: { pubDate: "desc" },
-    take: readFeedLimit(url),
-  });
+  const posts = await withSpan(
+    "rss.load_items",
+    { "rss.feed": feed.slug, "rss.limit": readFeedLimit(url) },
+    () =>
+      prisma.post.findMany({
+        where: { status: "published", feeds: { some: { feedId: feed.id } } },
+        include: POST_INCLUDE,
+        orderBy: { pubDate: "desc" },
+        take: readFeedLimit(url),
+      }),
+  );
 
   const xml = renderRssFeed(
     {

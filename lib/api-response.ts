@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { recordRequest } from "@/lib/metrics";
+import { withSpan } from "@/lib/otel";
+import { routeLabel } from "@/lib/prom";
 
 /**
  * One response envelope for every API route, so the frontend can unwrap
@@ -49,10 +51,17 @@ export async function handle(
   fn: () => Promise<NextResponse>,
 ): Promise<NextResponse> {
   const startedAt = Date.now();
+  const route = routeLabel(new URL(req.url).pathname);
   let response: NextResponse;
 
   try {
-    response = await fn();
+    // Every API route gets a named application span, so a trace in Jaeger
+    // shows which handler ran and not merely that Next served a request.
+    response = await withSpan(
+      `api ${req.method} ${route}`,
+      { "http.request.method": req.method, "http.route": route },
+      fn,
+    );
   } catch (error) {
     if (error instanceof ZodError) {
       response = fail("Validation failed", 422, error.issues);
