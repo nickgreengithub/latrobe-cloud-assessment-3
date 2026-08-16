@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { prisma } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma/client";
+import { recordRequest } from "@/lib/metrics";
 
 /**
  * One response envelope for every API route, so the frontend can unwrap
@@ -35,29 +35,6 @@ export function fail(message: string, status = 400, details?: unknown) {
 
 /** Process start, used by /api/health to report uptime. */
 export const STARTED_AT = Date.now();
-
-/**
- * Writes one RequestLog row per API call.
- *
- * This happens here rather than in proxy.ts because Next's proxy runs on the
- * Edge runtime, which cannot open a database connection. It is deliberately
- * fire-and-forget: a failure to record telemetry must never turn a successful
- * request into an error.
- */
-function logRequest(req: Request, status: number, startedAt: number) {
-  const { pathname } = new URL(req.url);
-  void prisma.requestLog
-    .create({
-      data: {
-        method: req.method,
-        path: pathname,
-        statusCode: status,
-        durationMs: Date.now() - startedAt,
-        userAgent: req.headers.get("user-agent"),
-      },
-    })
-    .catch(() => {});
-}
 
 /**
  * Wraps a route handler so every endpoint reports failures identically.
@@ -96,7 +73,7 @@ export async function handle(
     }
   }
 
-  logRequest(req, response.status, startedAt);
+  recordRequest(req, response.status, startedAt);
   return response;
 }
 
