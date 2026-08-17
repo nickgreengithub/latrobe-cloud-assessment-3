@@ -3,7 +3,7 @@
 ## Assessment 3
 
 - [ ] **Video, 3–8 minutes**, showing student ID, face and voice — script in
-      [`VIDEO_SCRIPT.md`](../VIDEO_SCRIPT.md)
+      `VIDEO_SCRIPT.md` (kept locally, deliberately not committed)
 - [ ] **Zip of the project code**, with `node_modules` removed:
 
 ```bash

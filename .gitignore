@@ -73,3 +73,6 @@ next-env.d.ts
 
 # JMeter's own internal logs — the .jtl results and summary are the evidence
 /load/results/*.log
+
+# Personal preparation notes — not part of the submitted codebase
+/VIDEO_SCRIPT.md
