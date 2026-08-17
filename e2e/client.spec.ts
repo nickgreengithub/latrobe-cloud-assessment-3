@@ -123,6 +123,31 @@ test.describe("Client use case — retrieving and viewing a feed", () => {
     }
   });
 
+  test("the dashboard hydrates cleanly when the server and browser disagree about time", async ({
+    page,
+  }) => {
+    // The server runs in UTC and this browser in UTC+7 (see
+    // playwright.config.ts). Any value formatted without a pinned time zone
+    // or locale renders differently on each side, React throws away the
+    // server markup, and the console carries a hydration error. That is
+    // exactly what the first EC2 deployment did, and a same-machine test
+    // could never have caught it.
+    const problems: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") problems.push(message.text());
+    });
+    page.on("pageerror", (error) => problems.push(error.message));
+
+    await page.goto("/dashboard");
+    await expect(page.getByText("Activity pulse")).toBeVisible();
+    await page.waitForTimeout(1500); // let hydration finish
+
+    const hydration = problems.filter((text) =>
+      /hydrat|#418|#423|#425|did not match/i.test(text),
+    );
+    expect(hydration, `hydration errors: ${hydration.join(" | ")}`).toHaveLength(0);
+  });
+
   test("the dashboard clock keeps ticking and pausing stops the pulse", async ({
     page,
   }) => {

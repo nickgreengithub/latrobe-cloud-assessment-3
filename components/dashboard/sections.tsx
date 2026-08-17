@@ -4,7 +4,7 @@ import type { Dashboard } from "@/lib/api";
 import { MetricBar } from "@/components/MetricBar";
 import { KpiTile } from "@/components/dashboard/KpiTile";
 import { PulseChart } from "@/components/dashboard/PulseChart";
-import { formatClockOrNever, formatTime } from "@/lib/format";
+import { formatClockOrNever, formatNumber, formatTime } from "@/lib/format";
 
 /**
  * The four dashboard sections.
@@ -84,7 +84,7 @@ export function OverviewSection({
         <KpiTile
           label="Requests"
           value={data.totals.requestsInWindow}
-          detail={`${data.totals.requests.toLocaleString()} all time`}
+          detail={`${formatNumber(data.totals.requests)} all time`}
           onOpen={() => onOpen("traffic")}
           opensLabel="Opens the traffic breakdown."
         />
@@ -98,7 +98,7 @@ export function OverviewSection({
         <KpiTile
           label="Feed polls"
           value={data.totals.feedPolls}
-          detail={`${data.totals.itemsServed.toLocaleString()} items served`}
+          detail={`${formatNumber(data.totals.itemsServed)} items served`}
           onOpen={() => onOpen("feeds")}
           opensLabel="Opens the feed breakdown."
         />

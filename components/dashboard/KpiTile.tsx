@@ -1,5 +1,7 @@
 "use client";
 
+import { formatNumber } from "@/lib/format";
+
 /**
  * A single headline figure.
  *
@@ -30,7 +32,7 @@ export function KpiTile({
   const body = (
     <>
       <span className="kpi-value">
-        {typeof value === "number" ? value.toLocaleString() : value}
+        {typeof value === "number" ? formatNumber(value) : value}
       </span>
       <span className="kpi-label">{label}</span>
       {detail ? <span className="kpi-detail">{detail}</span> : null}

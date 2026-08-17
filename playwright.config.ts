@@ -32,6 +32,12 @@ export default defineConfig({
 
   use: {
     baseURL: BASE_URL,
+    // Deliberately not the machine's zone. The server below runs in UTC, so
+    // every run reproduces the server/browser split that a real deployment
+    // has and a laptop does not — which is how the hydration bug in
+    // lib/format.ts reached production in the first place.
+    timezoneId: "Asia/Bangkok",
+    locale: "en-AU",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -52,6 +58,9 @@ export default defineConfig({
     env: {
       DATABASE_URL: process.env.DATABASE_URL ?? "file:./dev.db",
       SITE_URL: BASE_URL,
+      // Containers run UTC. Pinning it here means the tests see what the
+      // deployment sees rather than whatever the developer's clock says.
+      TZ: "UTC",
     },
   },
 });
