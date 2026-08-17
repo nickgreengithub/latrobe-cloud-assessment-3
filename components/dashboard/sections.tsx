@@ -4,7 +4,7 @@ import type { Dashboard } from "@/lib/api";
 import { MetricBar } from "@/components/MetricBar";
 import { KpiTile } from "@/components/dashboard/KpiTile";
 import { PulseChart } from "@/components/dashboard/PulseChart";
-import { formatTime } from "@/lib/format";
+import { formatClockOrNever, formatTime } from "@/lib/format";
 
 /**
  * The four dashboard sections.
@@ -183,16 +183,17 @@ export function FeedsSection({ data }: { data: Dashboard }) {
         <div className="table-scroll">
           <table className="data-table">
             <caption className="sr-only">
-              Each RSS channel with its stored post count, polls received, most
-              recent delivery and current state.
+              Each RSS channel with its stored post count, polls received, the
+              number of items in its most recent delivery, when it was last
+              polled, and its current state.
             </caption>
             <thead>
               <tr>
                 <th scope="col">Channel</th>
                 <th scope="col">Posts</th>
                 <th scope="col">Polls</th>
-                <th scope="col">Last items</th>
-                <th scope="col">Last polled</th>
+                <th scope="col">Items</th>
+                <th scope="col">Polled</th>
                 <th scope="col">State</th>
               </tr>
             </thead>
@@ -216,7 +217,7 @@ export function FeedsSection({ data }: { data: Dashboard }) {
                     <td>{feed.postCount}</td>
                     <td>{feed.polls}</td>
                     <td>{feed.lastItemCount ?? "—"}</td>
-                    <td>{formatTime(feed.lastPolledAt)}</td>
+                    <td>{formatClockOrNever(feed.lastPolledAt)}</td>
                     <td>
                       {/* State is never colour alone — the word is the label. */}
                       <span className={`state-pill ${state}`}>{state}</span>

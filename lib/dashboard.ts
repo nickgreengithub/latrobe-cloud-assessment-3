@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { STARTED_AT } from "@/lib/api-response";
 import { AGGREGATE_FEED } from "@/lib/metrics";
+import { routeLabel } from "@/lib/prom";
 import { withSpan } from "@/lib/otel";
 import type { Dashboard } from "@/lib/api";
 
@@ -102,6 +103,42 @@ async function collectPulse(since: Date | null, until: Date) {
   return { bucketSeconds, points };
 }
 
+/**
+ * Collapses concrete paths into the routes that served them.
+ *
+ * The request log stores what was actually requested, which is right — it is
+ * a log. But grouping the report by that raw path lists every post id and
+ * every channel slug as its own endpoint, so "requests per endpoint" became
+ * a dozen rows of /api/posts/cmswemnzo000s8… each with a handful of hits,
+ * while the route they all belong to appeared nowhere. Merging them by route
+ * pattern answers the question the panel is actually asking.
+ *
+ * Averages are re-weighted by count when rows merge; averaging the averages
+ * would let one request to a slow id outweigh a hundred fast ones.
+ */
+function groupByRoute(
+  rows: { path: string; _count: number; _avg?: { durationMs: number | null } }[],
+) {
+  const merged = new Map<string, { count: number; totalMs: number }>();
+
+  for (const row of rows) {
+    const route = routeLabel(row.path);
+    const existing = merged.get(route) ?? { count: 0, totalMs: 0 };
+    existing.count += row._count;
+    existing.totalMs += (row._avg?.durationMs ?? 0) * row._count;
+    merged.set(route, existing);
+  }
+
+  return [...merged.entries()]
+    .map(([path, value]) => ({
+      path,
+      count: value.count,
+      averageDurationMs: value.count ? Math.round(value.totalMs / value.count) : 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 12);
+}
+
 /** A feed that has been polled but served nothing is the interesting case. */
 type FeedRow = {
   slug: string;
@@ -171,7 +208,8 @@ export async function collectDashboard(window: string | null): Promise<Dashboard
         _count: true,
         _avg: { durationMs: true },
         orderBy: { _count: { path: "desc" } },
-        take: 12,
+        // No take here: the rows are merged by route below, so truncating
+        // first would drop hits that belong to a route that survives.
       }),
       prisma.requestLog.groupBy({
         by: ["statusCode"],
@@ -401,11 +439,7 @@ export async function collectDashboard(window: string | null): Promise<Dashboard
       subscribers,
     },
     byFeed,
-    byEndpoint: byEndpoint.map((row) => ({
-      path: row.path,
-      count: row._count,
-      averageDurationMs: Math.round(row._avg?.durationMs ?? 0),
-    })),
+    byEndpoint: groupByRoute(byEndpoint),
     byStatus: byStatus.map((row) => ({
       statusCode: row.statusCode,
       count: row._count,

@@ -26,7 +26,13 @@ export function formatTime(iso: string | null) {
   return CLOCK.format(new Date(iso));
 }
 
-/** Hours and minutes — for axis ticks, where seconds are noise. */
+/** Hours and minutes — for axis ticks and tables, where seconds are noise. */
 export function formatClock(iso: string) {
+  return SHORT_CLOCK.format(new Date(iso));
+}
+
+/** Hours and minutes, or "never" for a channel nothing has polled yet. */
+export function formatClockOrNever(iso: string | null) {
+  if (!iso) return "never";
   return SHORT_CLOCK.format(new Date(iso));
 }
