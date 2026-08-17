@@ -19,28 +19,28 @@ const SITE = process.env.SITE_URL ?? "http://localhost:3000";
 const FEEDS = [
   {
     slug: "careers",
-    title: "La Trobe RSS — Careers",
+    title: "Careers",
     description:
       "Internships, graduate programs and employability announcements for students.",
   },
   {
     slug: "events",
-    title: "La Trobe RSS — Events",
+    title: "Events",
     description: "Hackathons, workshops and campus events open to students.",
   },
   {
     slug: "academic",
-    title: "La Trobe RSS — Academic",
+    title: "Academic",
     description: "Subject notices, lab reminders and assessment updates.",
   },
   {
     slug: "administrative",
-    title: "La Trobe RSS — Administrative",
+    title: "Administrative",
     description: "Enrolment, timetabling and student administration notices.",
   },
   {
     slug: "general",
-    title: "La Trobe RSS — General",
+    title: "General",
     description: "University-wide announcements that do not fit another channel.",
   },
 ];
