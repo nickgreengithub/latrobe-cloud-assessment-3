@@ -103,6 +103,56 @@ Then in a browser **on a different device**:
 If the dashboard renders but stays empty, open the browser console. A failed
 request to `localhost:3000` there is the symptom of the problem above.
 
+## 5a. What the first real deployment taught us
+
+The steps above were written before deploying. Four things only showed up on
+contact with AWS, and they are the ones that will bite during the assessment.
+
+**The Learner Lab stops your instance.** Partway through the first build the
+box powered off cleanly — `systemd-shutdown … Powering off` in the console
+log, not a crash. Ending a lab session stops every running instance. The EBS
+volume survives, so `aws ec2 start-instances` brings it straight back, but
+**anything mid-build is lost**.
+
+**The public IP changes every time it restarts**, which breaks `SITE_URL` and
+every link in the published feed. Fixed with an **Elastic IP** — a static
+address that survives stop/start, and free while attached to a running
+instance:
+
+```bash
+ALLOC=$(aws ec2 allocate-address --domain vpc --query AllocationId --output text)
+aws ec2 associate-address --instance-id <id> --allocation-id "$ALLOC"
+```
+
+This one matters for Assessment 4: the address you give the marker stays
+valid between now and the demonstration.
+
+**Deploy from a script on the box, not by hand.** `~/deploy.sh` reads the
+current public address, writes it into `SITE_URL`, pulls and rebuilds. A
+restart on a fresh address is then one command rather than a hunt through
+docker-compose.yml.
+
+**Give it swap.** The Next.js build peaks well above steady state, and an
+instance that dies mid-build costs far more than 4 GB of disk:
+
+```bash
+sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
+sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+**Wait for the build properly.** `docker compose up --build` takes several
+minutes, and the old container keeps serving the whole time — so the app
+answers `/api/health` happily while still running the previous code. Check
+that the container was actually recreated:
+
+```bash
+sudo docker inspect rss-server --format '{{.State.StartedAt}}'
+```
+
+That mistake cost twenty minutes here: the new code was verified as "deployed"
+three times while the old image was still serving.
+
 ## 6. Cost
 
 The instance is the only thing that costs meaningfully — roughly US$0.08/hour
