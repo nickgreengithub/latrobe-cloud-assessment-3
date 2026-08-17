@@ -11,7 +11,12 @@ Lighthouse was run against four pages — home, `/feeds`, `/client` and
 | Home | 100 → 100 | 89 | **96** |
 | `/feeds` | 100 → 100 | 91 | 91 |
 | `/client` | 100 → 100 | 92 | **94** |
-| `/dashboard` | 100 → 100 | 94 | **97** |
+| `/dashboard` | 100 → 100 | 94 | **96** |
+
+The dashboard was later rebuilt around a fixed stage and a chart. That
+introduced two regressions, both caught by re-running Lighthouse rather than
+by assuming the redesign was neutral; they are recorded at the end of this
+document.
 
 Best practices and SEO were 100 on every page both times.
 
@@ -58,9 +63,11 @@ on any of the four pages afterwards.
 Automated tools check what can be checked mechanically. These were checked by
 hand while building the dashboard.
 
-- **Keyboard.** Every control on `/dashboard` — the four window buttons and
-  the live/paused toggle — is a real `<button>`, reachable by Tab and
-  operable by Enter and Space. The window picker is a `role="group"` with an
+- **Keyboard.** Every control on `/dashboard` — the section nav, the four
+  window buttons, the live/paused toggle and the KPI tiles — is a real
+  `<button>`, reachable by Tab and operable by Enter and Space. The section
+  nav marks the current tab with `aria-current`. The window picker is a
+  `role="group"` with an
   accessible name, and each option carries `aria-pressed`, so a screen reader
   announces which window is selected rather than only that a button exists.
 - **The metric bars are decorative.** Each bar sits beside a number that
@@ -90,7 +97,7 @@ hand while building the dashboard.
 a 2× display and nothing beyond it. Home went from 89 to 96, and largest
 contentful paint improved correspondingly.
 
-The dashboard's improvement (94 → 97) came from the same rebuild plus its
+The dashboard's improvement came from the same rebuild plus its
 server-rendered first snapshot: the page arrives with its numbers already in
 it rather than painting empty and then filling in.
 
@@ -103,3 +110,75 @@ client-rendered list, and its cost is the framework, not the page.
 
 The whole application loads well inside three seconds, which is the threshold
 that actually matters to whether someone stays.
+
+---
+
+## The dashboard redesign, and the two regressions it caused
+
+The dashboard was later rebuilt: a fixed stage that never scrolls, a second
+bar carrying the section nav and controls, an activity pulse chart, and KPI
+tiles that double as navigation. Re-running Lighthouse afterwards found two
+things that reasoning about the change would not have.
+
+### 1. The same accessibility defect, reintroduced
+
+`label-content-name-mismatch` was failing again — on the new KPI tiles.
+
+Each tile is a button whose visible content is three things: a value, a label
+and a detail line ("7 / Unique clients / in window"). To say where the button
+goes, it carried `aria-label="Unique clients: 7. Opens the client
+breakdown."` — and an `aria-label` **replaces** the accessible name rather
+than adding to it, so "in window" was visible on screen and absent from the
+name. That is precisely the defect already fixed twice in this project, in
+the header link and in the post list.
+
+Fixed by deleting the `aria-label` and putting the hint in a visually hidden
+`<span>` *inside* the button. Hidden text is additive: it joins the visible
+content, so the accessible name stays a superset of what is on screen.
+
+The lesson is specific and worth keeping: **`aria-label` on a composite
+control is almost always wrong.** If a control contains its own text, the
+name should come from that text, with anything extra added as hidden content
+rather than substituted for it.
+
+### 2. A 20× regression in main-thread blocking
+
+Performance fell from 97 to **86**, with total blocking time at **360 ms**.
+
+The server was not the problem — `/api/dashboard` answered in 130 ms against
+62,000 request-log rows. The cost was on the client, and it was
+`toLocaleTimeString`. That method constructs a fresh `Intl.DateTimeFormat` on
+every call, and the dashboard formats roughly a hundred timestamps — 48 chart
+buckets, the activity list, the feed table — then re-renders every ten
+seconds. It was building a hundred formatters twice a minute.
+
+Fixed by constructing two formatters once in `lib/format.ts` and reusing them.
+
+| | Before | After |
+|---|---|---|
+| Total blocking time | 360 ms | **20 ms** |
+| Performance score | 86 | **96** |
+
+Largest contentful paint remains around 2.8 s and is dominated by the
+framework bundle, as on every other page.
+
+### Accessibility of the new components, reviewed by hand
+
+- **The chart is not colour-alone.** Two series means a legend is always
+  present, and both totals are printed beside their keys, so the values are
+  readable without interpreting the plot.
+- **The tooltip enhances, it never gates.** Every value it shows is also in a
+  table rendered for screen readers — 48 rows of time, requests, polls and
+  errors — so the chart's data is fully reachable without a pointer.
+- **The chart's colours were computed, not chosen.** Both series were run
+  through a palette validator against each theme's panel surface: colourblind
+  separation ΔE 23.5 (dark) and 29.8 (light) against a target of 8, both
+  inside the lightness band for their surface, both above 3:1 contrast. The
+  first dark-mode pair failed the lightness band and was re-stepped.
+- **The section nav is real buttons** with `aria-current` on the active one,
+  reachable by Tab and operable by Enter and Space.
+- **The pulse animation respects `prefers-reduced-motion`**, as does the bar
+  width transition and the live indicator.
+- **Nothing moved below the fold.** The layout is verified by an end-to-end
+  test asserting the page has no scrollable overflow, so a future change that
+  reintroduces page scrolling fails CI rather than shipping quietly.

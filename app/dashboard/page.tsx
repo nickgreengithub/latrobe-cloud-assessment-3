@@ -25,21 +25,21 @@ export default async function DashboardPage() {
 
   return (
     <div className="view">
-      <header className="view-head">
+      {/*
+        No view-lead here, unlike the other pages. The dashboard's own bar
+        carries the section nav, the window filter and the live indicator in
+        the row a sentence of prose would otherwise occupy — on a view whose
+        whole purpose is fitting in one screen, height spent describing the
+        page is height taken from the page.
+      */}
+      <header className="view-head compact">
         <p className="view-kicker">
           <GaugeIcon />
           Dashboard
         </p>
         <h1 className="sr-only">Operational dashboard</h1>
-        <p className="view-lead">
-          Health, traffic, feed activity and alerts — measured, not estimated.
-        </p>
       </header>
-      {/*
-        The shell keeps the header and footer fixed and scrolls the view body,
-        so anything taller than the frame needs this wrapper to be reachable.
-      */}
-      <div className="view-body scroll-area detail-scroll">
+      <div className="view-body dash-body">
         <Dashboard initial={initial} initialWindow={DEFAULT_WINDOW} />
       </div>
     </div>

@@ -31,6 +31,77 @@ function parseSince(value: string | null): { since: Date | null; label: string }
   return { since: new Date(Date.now() - Number(match[1]) * ms), label: value.trim() };
 }
 
+/** How many points the activity pulse plots across whatever window is chosen. */
+const PULSE_BUCKETS = 48;
+
+/**
+ * Requests over time, bucketed for the activity chart.
+ *
+ * Done in SQL rather than by reading rows and counting them in JavaScript.
+ * After a load test the table holds tens of thousands of rows for a single
+ * window, and pulling them across just to bucket them would make the chart
+ * the most expensive thing on the page. Prisma has no expression-level
+ * groupBy, so this is one of the few places raw SQL is the right tool —
+ * `strftime('%s')` because Prisma stores SQLite DateTimes as ISO text.
+ *
+ * Empty buckets are filled in afterwards. Without them the line would join
+ * across a gap in traffic and draw a slope where nothing actually happened.
+ */
+async function collectPulse(since: Date | null, until: Date) {
+  const from = since ?? new Date(until.getTime() - 60 * 60 * 1000);
+  const spanMs = Math.max(60_000, until.getTime() - from.getTime());
+  const bucketSeconds = Math.max(1, Math.round(spanMs / PULSE_BUCKETS / 1000));
+
+  // The outer CAST is not decoration. SQLite binds a JavaScript number as
+  // REAL, so dividing by a bound parameter gives floating point — the bucket
+  // ids come back as 23825770.226 and match no integer bucket at all. The
+  // chart renders completely empty and looks like a data problem rather than
+  // an arithmetic one.
+  const rows = await prisma.$queryRaw<
+    { bucket: number; requests: number; errors: number; polls: number }[]
+  >`
+    SELECT CAST(CAST(strftime('%s', createdAt) AS INTEGER) / CAST(${bucketSeconds} AS INTEGER) AS INTEGER) AS bucket,
+           COUNT(*)                                                AS requests,
+           SUM(CASE WHEN statusCode >= 400    THEN 1 ELSE 0 END)   AS errors,
+           SUM(CASE WHEN feedSlug IS NOT NULL THEN 1 ELSE 0 END)   AS polls
+    FROM RequestLog
+    WHERE createdAt >= ${from.toISOString()}
+    GROUP BY bucket
+    ORDER BY bucket
+  `;
+
+  const counts = new Map(
+    rows.map((row) => [
+      Number(row.bucket),
+      {
+        requests: Number(row.requests),
+        errors: Number(row.errors),
+        polls: Number(row.polls),
+      },
+    ]),
+  );
+
+  // Anchor the series on the current bucket and count backwards, so the
+  // right-hand edge of the chart is always now. Anchoring on `from` instead
+  // leaves the newest traffic one bucket past the end of the axis — the
+  // counters move while the chart appears not to.
+  const lastBucket = Math.floor(until.getTime() / 1000 / bucketSeconds);
+  const firstBucket = lastBucket - (PULSE_BUCKETS - 1);
+  const points = [];
+  for (let i = 0; i < PULSE_BUCKETS; i++) {
+    const bucket = firstBucket + i;
+    const found = counts.get(bucket);
+    points.push({
+      at: new Date(bucket * bucketSeconds * 1000).toISOString(),
+      requests: found?.requests ?? 0,
+      errors: found?.errors ?? 0,
+      polls: found?.polls ?? 0,
+    });
+  }
+
+  return { bucketSeconds, points };
+}
+
 /** A feed that has been polled but served nothing is the interesting case. */
 type FeedRow = {
   slug: string;
@@ -282,9 +353,14 @@ export async function collectDashboard(window: string | null): Promise<Dashboard
     });
   }
 
+  const pulse = await withSpan("dashboard.pulse", { "rss.window": label }, () =>
+    collectPulse(since, new Date()),
+  );
+
   return {
     generatedAt: new Date().toISOString(),
     window: label,
+    pulse,
     health: {
       status: databaseStatus === "connected" ? "healthy" : "degraded",
       uptimeSeconds: Math.round((Date.now() - STARTED_AT) / 1000),

@@ -286,10 +286,45 @@ collection, one point in time.
 The first snapshot is rendered on the server, so the page arrives populated
 rather than empty-then-filled; the client polls from there.
 
-Panels: health and uptime · rule-based alerts · totals (requests, unique
-clients, feed polls, items served, latency, error rate) · requests per feed ·
-feed status table · requests per endpoint · requests per client · response
-codes · stored content · recent activity.
+**It is a fixed stage, not a scrolling column.** An operational dashboard is
+something you glance at, and a figure below the fold is a figure nobody reads.
+The page itself never scrolls; panels that can grow without limit — the feed
+table, the activity list — scroll inside themselves. An end-to-end test
+asserts the page has no scrollable overflow, so the property cannot quietly
+regress.
+
+Four sections, switched from the dashboard's own bar, which also carries the
+window filter, the last-updated time and the live indicator:
+
+| Section | Shows |
+| --- | --- |
+| Overview | six KPI tiles, the activity pulse chart, and the alert list |
+| Feeds | requests per feed, and the feed status table |
+| Clients | requests per client, and how a client is identified |
+| Traffic | requests per endpoint, response codes, and recent activity |
+
+**The overview tiles are the navigation.** Each tile is a button that opens
+the section explaining it — "unique clients" opens the client breakdown,
+"feed polls" opens the feed breakdown — so a reader who wants the detail
+behind a number clicks the number rather than hunting for the right tab.
+
+### The activity pulse
+
+A line chart of requests and errors over the window, bucketed into 48 points
+in SQL rather than by reading rows and counting them in JavaScript — after a
+load test the table holds tens of thousands of rows for a single window.
+
+Two series, so a legend is always present and identity never rests on colour
+alone. Errors use the reserved status colour rather than a third categorical
+hue, because "this is the bad one" is the whole point of plotting it. The two
+colours were checked with a palette validator against both theme surfaces
+rather than picked by eye — colourblind separation ΔE 23.5 in dark and 29.8 in
+light, against a target of 8.
+
+Hovering gives a crosshair that snaps to the nearest bucket and one tooltip
+listing every series, so the pointer never has to land on a 2px line. Every
+value the tooltip shows is also in a table rendered for screen readers, so
+the interaction enhances and never gates.
 
 **Alerts have two levels.** A warning says something is drifting — error rate
 above 2%, a channel that served zero items, a request past one second. A
