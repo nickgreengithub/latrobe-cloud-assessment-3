@@ -179,9 +179,18 @@ export type FeedMetrics = {
   lastError: string | null;
 };
 
+export type PulsePoint = {
+  at: string;
+  requests: number;
+  errors: number;
+  polls: number;
+};
+
 export type Dashboard = {
   generatedAt: string;
   window: string;
+  /** Requests bucketed over the window, for the activity chart. */
+  pulse: { bucketSeconds: number; points: PulsePoint[] };
   health: {
     status: string;
     uptimeSeconds: number;

@@ -92,7 +92,42 @@ test.describe("Client use case — retrieving and viewing a feed", () => {
 
     // And it must be visible to a person, not only in the JSON.
     await page.goto("/dashboard");
-    await expect(page.getByText("Requests per feed")).toBeVisible();
     await expect(page.getByText("Unique clients")).toBeVisible();
+    await expect(page.getByText("Activity pulse")).toBeVisible();
+
+    // The chart renders its series from real data rather than an empty axis.
+    await expect(page.locator(".pulse-line.requests")).toBeVisible();
+  });
+
+  test("dashboard sections are reachable without scrolling the page", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard");
+
+    // The whole point of the layout: the page itself never scrolls, so no
+    // panel can end up below the fold where nobody reads it.
+    const overflow = await page.evaluate(() => {
+      const element = document.scrollingElement ?? document.body;
+      return element.scrollHeight - element.clientHeight;
+    });
+    expect(overflow).toBeLessThanOrEqual(1);
+
+    // Each section is reachable from the dashboard's own bar.
+    for (const [section, heading] of [
+      ["Feeds", "Requests per feed"],
+      ["Clients", "Requests per client"],
+      ["Traffic", "Requests per endpoint"],
+    ] as const) {
+      await page.getByRole("button", { name: section, exact: true }).click();
+      await expect(page.getByText(heading)).toBeVisible();
+    }
+  });
+
+  test("an overview tile opens the section that explains it", async ({ page }) => {
+    await page.goto("/dashboard");
+
+    // The tiles double as navigation — clicking a figure opens its detail.
+    await page.getByRole("button", { name: /Unique clients/ }).click();
+    await expect(page.getByText("Requests per client")).toBeVisible();
   });
 });

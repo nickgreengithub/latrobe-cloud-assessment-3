@@ -41,7 +41,13 @@ Show the architecture diagram in the README briefly. Do not read it out.
 
 ## 1:00 — The dashboard (2:00) ← **the largest single mark, spend the time**
 
-Open `/dashboard`. Work top to bottom and say what each thing is *for*:
+Open `/dashboard`. It fits on one screen deliberately — say so once:
+
+> "There's no scrolling here. An operational dashboard is something you glance
+> at, so anything below the fold is something nobody reads. The bar at the top
+> switches sections and scopes the whole view by time window."
+
+Work through the **Overview** and say what each thing is *for*:
 
 - **Health strip** — "`/health` returns 200, and this database figure is a
   real `SELECT 1`, not an assumption. The container's own healthcheck polls
@@ -54,18 +60,38 @@ Open `/dashboard`. Work top to bottom and say what each thing is *for*:
 - **Operational metrics** — total requests, requests in window, **unique
   clients**, feed polls, items served, RSS channel count, latency, error rate.
   Name them; these are the rubric's list.
+- **Activity pulse** — "requests and errors over the window. Two series, so
+  there's always a legend — identity never rests on colour. Errors use the
+  status colour rather than a third hue, because 'this is the bad one' is the
+  point of plotting it." **Hover across it** to show the crosshair snapping to
+  buckets and the tooltip listing every series.
+
+Then use the tiles as navigation — this is worth showing explicitly:
+
+> "The tiles are buttons. If I want the detail behind a number, I click the
+> number."
+
+Click **Unique clients** → lands on the Clients section:
+
+- **Requests per client** — "identified by a hash of address and user agent,
+  so the count is real without the server storing who anyone is."
+
+Then **Feeds** from the bar:
+
 - **Requests per feed** — "measured per channel, not inferred from the path."
 - **Feed status table** — "posts stored, polls received, items in the last
   delivery, and its state. A feed serving zero items is a 200 as far as HTTP
   is concerned — that's why there's a separate table recording what the feed
   did, not just what the response code was."
-- **Requests per client** — "identified by a hash of address and user agent,
-  so the count is real without the server storing who anyone is."
 
-**Then make it move.** In the terminal, `curl http://localhost:3000/rss` a few
-times, and watch the counters change on the next refresh. This is the single
-most convincing ten seconds in the video — it proves the numbers are live
-rather than rendered once.
+**Then make it move.** Back on Overview, set the window to **15 min** so the
+chart is sensitive, then in the terminal `curl http://localhost:3000/rss` a
+few times and watch the counters climb and the pulse line rise on the next
+refresh. This is the single most convincing ten seconds in the video — it
+proves the numbers are live rather than rendered once.
+
+> Tip: on a long window the JMeter run dominates the chart and everything else
+> looks flat. 15 minutes shows the traffic you generate on camera.
 
 ## 3:00 — Data and persistence (1:00)
 

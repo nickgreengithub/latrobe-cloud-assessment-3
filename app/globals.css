@@ -1832,75 +1832,105 @@ select {
 
 /* ============================================================
    Dashboard (Assessment 3)
+
+   A fixed stage, not a scrolling column. The page never scrolls; panels
+   that can grow without limit scroll inside themselves.
    ============================================================ */
 
+.view-head.compact {
+  margin-bottom: 0.35rem;
+}
+
+.dash-body {
+  /* Claims the remaining height and refuses to grow past it, which is what
+     stops the page from scrolling. min-height:0 is load-bearing: without it
+     a grid/flex child sizes to its content and overflows the frame. */
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
 .dashboard {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.6rem;
   width: 100%;
 }
 
-.dashboard-split {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr;
-}
+/* ---- The dashboard's own bar ---- */
 
-@media (min-width: 860px) {
-  .dashboard-split {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.small {
-  font-size: 0.72rem;
-}
-
-.panel-note {
-  margin: 0.85rem 0 0;
-  font-size: 0.72rem;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-/* ---- Controls ---- */
-
-.dashboard-controls {
+.dash-bar {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
 }
 
-.dashboard-controls-right {
+.dash-nav {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.dash-nav-item {
+  padding: 0.35rem 0.85rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-2);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.dash-nav-item:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.dash-nav-item.active {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+
+.dash-bar-right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+}
+
+.dash-updated {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .window-picker {
   display: inline-flex;
-  padding: 0.2rem;
-  gap: 0.15rem;
+  padding: 0.15rem;
+  gap: 0.1rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: var(--surface-2);
 }
 
 .window-option {
-  padding: 0.35rem 0.8rem;
+  padding: 0.28rem 0.65rem;
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   cursor: pointer;
 }
 
@@ -1914,7 +1944,9 @@ select {
 }
 
 .window-option:focus-visible,
-.live-toggle:focus-visible {
+.live-toggle:focus-visible,
+.dash-nav-item:focus-visible,
+.kpi-tile:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -1922,14 +1954,14 @@ select {
 .live-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.35rem 0.8rem;
+  gap: 0.4rem;
+  padding: 0.28rem 0.7rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: var(--surface-2);
   color: var(--muted);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   cursor: pointer;
 }
 
@@ -1939,8 +1971,8 @@ select {
 }
 
 .live-dot {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.45rem;
+  height: 0.45rem;
   border-radius: 50%;
   background: currentColor;
 }
@@ -1951,45 +1983,315 @@ select {
 
 @keyframes live-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  50% { opacity: 0.3; }
 }
 
-/* Respect the system setting — a pulsing dot is decoration, not information. */
+/* A pulsing dot is decoration; the timestamp beside it carries the meaning. */
 @media (prefers-reduced-motion: reduce) {
-  .live-dot.pulsing {
-    animation: none;
-  }
+  .live-dot.pulsing { animation: none; }
 }
 
 .dashboard-stale {
+  flex: none;
   margin: 0;
-  padding: 0.6rem 0.9rem;
+  padding: 0.45rem 0.8rem;
   border: 1px solid var(--warn-soft);
   border-radius: var(--radius-sm);
   background: var(--warn-soft);
   color: var(--warn);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 
-/* ---- Health ---- */
+/* ---- The stage ---- */
 
-.health-pill {
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--radius-pill);
-  font-size: 0.62rem;
+.dash-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.dash-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+/* Overview: a KPI row, then the chart beside the alerts. */
+.dash-grid.overview {
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.dash-grid.overview .kpi-row {
+  grid-column: 1 / -1;
+}
+
+.dash-grid.split-2,
+.dash-grid.traffic {
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
+}
+
+@media (min-width: 880px) {
+  .dash-grid.overview {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+
+  .dash-grid.split-2 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-auto-rows: minmax(0, 1fr);
+  }
+
+  .dash-grid.traffic {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+  }
+}
+
+.dash-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* A flex column, not a plain block. The chart inside asks for the full
+   height of this box, and a block parent whose own height is auto resolves
+   that against its content — so the chart sizes to itself and collapses to a
+   strip at the top of an otherwise empty panel. */
+.dash-panel .panel-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-panel .pulse {
+  flex: 1;
+}
+
+/* ---- KPI tiles ---- */
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.kpi-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.kpi-tile.is-link {
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.kpi-tile.is-link:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+/* The one figure the eye should land on first. */
+.kpi-value {
+  font-size: 1.5rem;
+  line-height: 1.15;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-label {
+  font-family: var(--font-2);
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.kpi-detail {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+/* Status tone colours the figure only — the label beside it stays text ink,
+   so meaning never rests on colour alone. */
+.kpi-tile.tone-ok .kpi-value { color: var(--ok); }
+.kpi-tile.tone-warn .kpi-value { color: var(--warn); }
+.kpi-tile.tone-bad .kpi-value { color: var(--danger); }
+
+/* ---- Activity pulse chart ---- */
+
+/* Series colours, validated against each theme's panel surface rather than
+   picked by eye: CVD separation dE 23.5 dark / 29.8 light, both inside the
+   lightness band for their surface. */
+:root,
+[data-theme="dark"] {
+  --viz-requests: #6366f1;
+  --viz-errors: #f43f5e;
+  --viz-grid: rgba(148, 163, 184, 0.18);
+}
+
+[data-theme="light"] {
+  --viz-requests: #4f46e5;
+  --viz-errors: #dc2626;
+  --viz-grid: rgba(15, 23, 42, 0.12);
+}
+
+.pulse {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 0.4rem;
+}
+
+.pulse-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.pulse-legend {
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.legend-item strong {
+  color: var(--text);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.legend-key {
+  width: 16px;
+  height: 8px;
+}
+
+.legend-key line {
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.key-requests { stroke: var(--viz-requests); }
+.key-errors { stroke: var(--viz-errors); }
+
+.pulse-bucket {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.pulse-plot {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.pulse-svg {
+  display: block;
+  touch-action: none;
+}
+
+.pulse-grid {
+  stroke: var(--viz-grid);
+  stroke-width: 1;
+}
+
+.pulse-axis {
+  fill: var(--muted);
+  font-size: 9px;
+  font-family: var(--font-2);
+}
+
+.pulse-area {
+  fill: var(--viz-requests);
+  opacity: 0.1;
+}
+
+.pulse-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.pulse-line.requests { stroke: var(--viz-requests); }
+.pulse-line.errors { stroke: var(--viz-errors); }
+
+/* A 2px ring in the surface colour keeps the marker legible where it crosses
+   the line it sits on. */
+.pulse-marker {
+  fill: var(--viz-requests);
+  stroke: var(--surface-solid);
+  stroke-width: 2;
+}
+
+.pulse-marker.errors { fill: var(--viz-errors); }
+
+.pulse-crosshair {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.pulse-tooltip {
+  position: absolute;
+  top: 0.2rem;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-solid);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.tooltip-time {
+  font-family: var(--font-2);
+  font-size: 0.55rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: var(--muted);
 }
 
-.health-pill.good {
-  background: var(--ok-soft);
-  color: var(--ok);
+/* Values lead, labels follow — the reader has the series and wants the
+   number. */
+.tooltip-row {
+  font-size: 0.72rem;
+  color: var(--muted);
 }
 
-.health-pill.bad {
-  background: var(--danger-soft);
-  color: var(--danger);
+.tooltip-row strong {
+  color: var(--text);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
+
+.tooltip-row.bad strong { color: var(--viz-errors); }
 
 /* ---- Alerts ---- */
 
@@ -1999,14 +2301,14 @@ select {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .alert {
   display: flex;
   align-items: flex-start;
-  gap: 0.7rem;
-  padding: 0.7rem 0.85rem;
+  gap: 0.6rem;
+  padding: 0.5rem 0.65rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface-2);
@@ -2014,50 +2316,36 @@ select {
 
 .alert-level {
   flex: none;
-  padding: 0.15rem 0.5rem;
+  padding: 0.1rem 0.45rem;
   border-radius: var(--radius-pill);
   font-family: var(--font-2);
-  font-size: 0.56rem;
+  font-size: 0.52rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.alert.critical {
-  border-color: var(--danger-soft);
-}
-
-.alert.critical .alert-level {
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-
-.alert.warning .alert-level {
-  background: var(--warn-soft);
-  color: var(--warn);
-}
-
-.alert.info .alert-level {
-  background: var(--ok-soft);
-  color: var(--ok);
-}
+.alert.critical { border-color: var(--danger-soft); }
+.alert.critical .alert-level { background: var(--danger-soft); color: var(--danger); }
+.alert.warning .alert-level { background: var(--warn-soft); color: var(--warn); }
+.alert.info .alert-level { background: var(--ok-soft); color: var(--ok); }
 
 .alert-title {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   color: var(--text);
 }
 
 .alert-detail {
-  margin: 0.15rem 0 0;
-  font-size: 0.78rem;
-  line-height: 1.5;
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
   color: var(--muted);
 }
 
 /* ---- Metric bars ---- */
 
 .metric-row + .metric-row {
-  margin-top: 0.75rem;
+  margin-top: 0.6rem;
 }
 
 .metric-row-head {
@@ -2065,28 +2353,29 @@ select {
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.25rem;
 }
 
 .metric-row-label {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--text);
   overflow-wrap: anywhere;
 }
 
 .metric-row-value {
   flex: none;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .metric-row-detail {
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
 }
 
 .metric-track {
-  height: 0.4rem;
+  height: 0.35rem;
   border-radius: var(--radius-pill);
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -2096,24 +2385,20 @@ select {
 .metric-fill {
   height: 100%;
   border-radius: var(--radius-pill);
-  background: var(--gradient);
+  background: var(--viz-requests);
   transition: width 0.4s ease;
 }
 
 .metric-fill.danger {
-  background: var(--danger);
+  background: var(--viz-errors);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .metric-fill {
-    transition: none;
-  }
+  .metric-fill { transition: none; }
 }
 
 /* ---- Tables ---- */
 
-/* Tables get their own scroll container so a narrow screen scrolls the table
-   rather than the whole page sideways. */
 .table-scroll {
   overflow-x: auto;
 }
@@ -2121,20 +2406,23 @@ select {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
 .data-table th,
 .data-table td {
-  padding: 0.55rem 0.6rem;
+  padding: 0.45rem 0.5rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .data-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-solid);
   font-family: var(--font-2);
-  font-size: 0.56rem;
+  font-size: 0.52rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -2146,46 +2434,53 @@ select {
   border-bottom: 0;
 }
 
-.data-table tbody th {
-  font-weight: 400;
+.data-table tbody th { font-weight: 400; }
+
+/* The channel name is the widest thing in the row and pushes the state
+   column past the panel edge, where it reads as a truncated word rather than
+   as something you can scroll to. Cap it and let the name ellipsis instead:
+   the state pill is the column you actually scan for. */
+.data-table tbody th[scope="row"] {
+  max-width: 11rem;
 }
 
-.feed-name {
-  display: block;
-  color: var(--text);
+.data-table td:last-child,
+.data-table thead th:last-child {
+  padding-right: 0;
 }
 
+/* Truncation lives on these spans rather than on the cell: text-overflow
+   needs a block box, and a table cell is not one — applied to the cell it
+   clips mid-word with no ellipsis to show that it did. */
+.feed-name,
 .feed-slug {
   display: block;
-  font-size: 0.68rem;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feed-name { color: var(--text); }
+
+.feed-slug {
+  font-size: 0.64rem;
   color: var(--muted);
 }
 
 .state-pill {
-  padding: 0.15rem 0.5rem;
+  padding: 0.1rem 0.45rem;
   border-radius: var(--radius-pill);
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   background: var(--surface-2);
   color: var(--muted);
 }
 
-.state-pill.serving {
-  background: var(--ok-soft);
-  color: var(--ok);
-}
-
+.state-pill.serving { background: var(--ok-soft); color: var(--ok); }
 .state-pill.empty,
-.state-pill.idle {
-  background: var(--warn-soft);
-  color: var(--warn);
-}
-
-.state-pill.error {
-  background: var(--danger-soft);
-  color: var(--danger);
-}
+.state-pill.idle { background: var(--warn-soft); color: var(--warn); }
+.state-pill.error { background: var(--danger-soft); color: var(--danger); }
 
 /* ---- Activity feed ---- */
 
@@ -2198,56 +2493,57 @@ select {
 .activity-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.45rem 0;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
   border-bottom: 1px solid var(--border);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
 }
 
-.activity-row:last-child {
-  border-bottom: 0;
-}
+.activity-row:last-child { border-bottom: 0; }
 
 .status-chip {
   flex: none;
-  min-width: 2.4rem;
+  min-width: 2.2rem;
   text-align: center;
-  padding: 0.1rem 0.4rem;
+  padding: 0.08rem 0.35rem;
   border-radius: var(--radius-sm);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.status-chip.good {
-  background: var(--ok-soft);
-  color: var(--ok);
-}
-
-.status-chip.warn {
-  background: var(--warn-soft);
-  color: var(--warn);
-}
-
-.status-chip.bad {
-  background: var(--danger-soft);
-  color: var(--danger);
-}
+.status-chip.good { background: var(--ok-soft); color: var(--ok); }
+.status-chip.warn { background: var(--warn-soft); color: var(--warn); }
+.status-chip.bad { background: var(--danger-soft); color: var(--danger); }
 
 .activity-method {
   flex: none;
   color: var(--muted);
   font-family: var(--font-2);
-  font-size: 0.66rem;
+  font-size: 0.6rem;
   letter-spacing: 0.08em;
 }
 
 .activity-path {
   flex: 1;
   color: var(--text);
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .activity-time {
   flex: none;
   color: var(--text);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.muted { color: var(--muted); }
+.small { font-size: 0.7rem; }
+
+.panel-note {
+  margin: 0.7rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: var(--muted);
 }
