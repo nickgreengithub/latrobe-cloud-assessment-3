@@ -2,6 +2,8 @@
 
 **Nicholas Green · 22840097 · CSE5006**
 
+**Repository:** <https://github.com/nickgreengithub/latrobe-cloud-assessment-3>
+
 An RSS server for university announcements, and the LMS-style client that
 subscribes to it. Announcements are authored through a web interface, stored in
 a relational database, exposed over a REST API, and published as valid **RSS
