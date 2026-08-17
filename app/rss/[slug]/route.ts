@@ -59,7 +59,14 @@ export async function GET(
 
   const xml = renderRssFeed(
     {
-      title: feed.title,
+      // The stored title is the bare channel name — "Careers" — because that
+      // is what the interface should show, and repeating the institution on
+      // every row of every list is noise. A published feed is the opposite
+      // case: it lands in a reader beside subscriptions from everywhere else,
+      // where "Careers" alone says nothing about whose careers. The context
+      // is added here, at the point where it is actually needed, rather than
+      // stored in every row. This also matches the aggregate channel's title.
+      title: `La Trobe RSS Server — ${feed.title}`,
       link: `${siteUrl}/feeds?channel=${feed.slug}`,
       description: feed.description,
       language: feed.language,

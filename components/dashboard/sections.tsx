@@ -171,6 +171,12 @@ export function FeedsSection({ data }: { data: Dashboard }) {
             tone={feed.errors > 0 ? "danger" : "accent"}
           />
         ))}
+        <p className="panel-note">
+          Every row is one endpoint, and <code>/rss</code> is one of them
+          rather than the total of the others. A client subscribed to{" "}
+          <code>/rss/careers</code> polls only that channel, so a single
+          channel can and does receive more requests than the combined feed.
+        </p>
       </Panel>
 
       <Panel title="Feed status" scroll>

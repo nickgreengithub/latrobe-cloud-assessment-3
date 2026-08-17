@@ -270,12 +270,25 @@ export async function collectDashboard(window: string | null): Promise<Dashboard
     };
   }
 
+  /**
+   * The aggregate channel is a sibling of the others, not their parent.
+   *
+   * /rss is its own endpoint that happens to carry every published post; a
+   * client polling /rss/careers never touches it. Labelling it "aggregate"
+   * and pinning it at the top of the channel list made it read as a total,
+   * so a single channel out-polling it looked like a bug rather than what it
+   * is — one endpoint being busier than another.
+   *
+   * Sorting by request count rather than pinning it removes the implied
+   * hierarchy, and descending magnitude is the right order for a bar
+   * comparison regardless.
+   */
   const byFeed: FeedRow[] = [
-    buildFeedRow(AGGREGATE_FEED, "All announcements (aggregate)", publishedPosts),
+    buildFeedRow(AGGREGATE_FEED, "All announcements", publishedPosts),
     ...feeds.map((feed) =>
       buildFeedRow(feed.slug, feed.title, feed._count.posts),
     ),
-  ];
+  ].sort((a, b) => b.requests - a.requests || a.title.localeCompare(b.title));
 
   // Channels that were requested but do not exist. A client polling a
   // mistyped URL forever is invisible unless something says so.
