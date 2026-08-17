@@ -24,13 +24,76 @@ import { formatClock } from "@/lib/format";
 
 type Size = { width: number; height: number };
 
-const PADDING = { top: 14, right: 16, bottom: 20, left: 34 };
+const PADDING = { top: 14, right: 18, bottom: 30, left: 38 };
 const MIN_HEIGHT = 120;
 
 function niceCeiling(value: number) {
   if (value <= 5) return 5;
   const magnitude = 10 ** Math.floor(Math.log10(value));
   return Math.ceil(value / magnitude) * magnitude;
+}
+
+const MINUTE = 60;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
+/**
+ * How far apart the axis ticks sit, chosen from how much time is on screen.
+ *
+ * One tick per bucket would be 48 labels in the width of a panel. These
+ * intervals give five to eight ticks at every window the dashboard offers —
+ * enough to read a time off the axis, few enough that the labels never
+ * collide:
+ *
+ *   15 minutes → every 3 minutes    1 hour  → every 10 minutes
+ *   24 hours   → every 3 hours      7 days  → every day
+ */
+function tickIntervalFor(spanSeconds: number): number {
+  if (spanSeconds <= 20 * MINUTE) return 3 * MINUTE;
+  if (spanSeconds <= 2 * HOUR) return 10 * MINUTE;
+  if (spanSeconds <= 36 * HOUR) return 3 * HOUR;
+  return DAY;
+}
+
+const TICK_CLOCK = new Intl.DateTimeFormat("en-AU", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+const TICK_DAY = new Intl.DateTimeFormat("en-AU", {
+  day: "numeric",
+  month: "short",
+});
+
+/**
+ * Ticks on whole-clock boundaries — :00, :10, :20, or midnight for days.
+ *
+ * Aligning to the data's start instead would label the axis 09:37, 09:47,
+ * 09:57, which is a set of times nobody thinks in. Rounding up to the next
+ * boundary and stepping from there is what makes an axis readable.
+ */
+function buildTicks(firstMs: number, lastMs: number) {
+  const spanSeconds = Math.max(1, (lastMs - firstMs) / 1000);
+  const intervalMs = tickIntervalFor(spanSeconds) * 1000;
+  const isDaily = intervalMs >= DAY * 1000;
+
+  // Day ticks land on local midnight; smaller ones divide the hour evenly,
+  // so epoch alignment is the same thing as clock alignment.
+  const firstTick = isDaily
+    ? new Date(new Date(firstMs).setHours(24, 0, 0, 0)).getTime()
+    : Math.ceil(firstMs / intervalMs) * intervalMs;
+
+  const ticks: { at: number; label: string }[] = [];
+  for (let at = firstTick; at <= lastMs; at += intervalMs) {
+    ticks.push({
+      at,
+      label: isDaily
+        ? TICK_DAY.format(new Date(at))
+        : TICK_CLOCK.format(new Date(at)),
+    });
+  }
+  return ticks;
 }
 
 export function PulseChart({
@@ -92,6 +155,19 @@ export function PulseChart({
 
   const lastIndex = points.length - 1;
   const latest = points[lastIndex];
+
+  // Ticks are placed by time rather than by bucket index, so they land on
+  // whole clock boundaries instead of wherever a bucket happens to start.
+  const firstMs = points.length ? new Date(points[0].at).getTime() : 0;
+  const lastMs = points.length ? new Date(points[lastIndex].at).getTime() : 0;
+  const ticks = points.length > 1 ? buildTicks(firstMs, lastMs) : [];
+
+  // A plain function, not useCallback: the React Compiler memoizes this
+  // component already, and hand-written memoization it cannot prove safe
+  // makes it skip optimising the whole component rather than just this line.
+  const xForTime = (ms: number) =>
+    PADDING.left +
+    (lastMs > firstMs ? ((ms - firstMs) / (lastMs - firstMs)) * plotWidth : 0);
   const active = hover === null ? null : points[hover];
   const totalRequests = points.reduce((sum, p) => sum + p.requests, 0);
   const totalErrors = points.reduce((sum, p) => sum + p.errors, 0);
@@ -223,22 +299,44 @@ export function PulseChart({
               </g>
             ) : null}
 
-            <text
-              className="pulse-axis"
-              x={PADDING.left}
-              y={height - 6}
-              textAnchor="start"
-            >
-              {points.length ? formatClock(points[0].at) : ""}
-            </text>
-            <text
-              className="pulse-axis"
-              x={width - PADDING.right}
-              y={height - 6}
-              textAnchor="end"
-            >
-              now
-            </text>
+            {/* Time axis: a baseline, a tick per interval, and its label. */}
+            <line
+              className="pulse-grid"
+              x1={PADDING.left}
+              x2={width - PADDING.right}
+              y1={PADDING.top + plotHeight}
+              y2={PADDING.top + plotHeight}
+            />
+            {ticks.map((tick) => {
+              const x = xForTime(tick.at);
+              // Anchor the outermost labels inward so neither runs off the
+              // edge of the panel.
+              const anchor =
+                x - PADDING.left < 18
+                  ? "start"
+                  : width - PADDING.right - x < 18
+                    ? "end"
+                    : "middle";
+              return (
+                <g key={tick.at}>
+                  <line
+                    className="pulse-tick"
+                    x1={x}
+                    x2={x}
+                    y1={PADDING.top + plotHeight}
+                    y2={PADDING.top + plotHeight + 4}
+                  />
+                  <text
+                    className="pulse-axis"
+                    x={x}
+                    y={height - 8}
+                    textAnchor={anchor}
+                  >
+                    {tick.label}
+                  </text>
+                </g>
+              );
+            })}
           </svg>
         ) : null}
 
