@@ -79,6 +79,35 @@ export default function AboutPage() {
 
           <Collapsible title="References (APA 7th)">
             <div className="prose">
+              <p className="inline-note">
+                Observability, testing and reporting (Assessment 3)
+              </p>
+              <p>
+                Beyer, B., Jones, C., Petoff, J., &amp; Murphy, N. R. (2016).{" "}
+                <em>Site reliability engineering: How Google runs production
+                systems</em>. O&rsquo;Reilly Media.
+              </p>
+              <p>
+                OpenTelemetry Authors. (n.d.). <em>Traces</em>. OpenTelemetry
+                Documentation. https://opentelemetry.io/docs/concepts/signals/traces/
+              </p>
+              <p>
+                Prometheus Authors. (n.d.). <em>Metric and label naming</em>.
+                Prometheus Documentation.
+                https://prometheus.io/docs/practices/naming/
+              </p>
+              <p>
+                Few, S. (2006). <em>Information dashboard design: The effective
+                visual communication of data</em>. O&rsquo;Reilly Media.
+              </p>
+              <p>
+                Apache Software Foundation. (n.d.). <em>Apache JMeter user
+                manual</em>. https://jmeter.apache.org/usermanual/
+              </p>
+              <p>
+                Google. (n.d.). <em>Lighthouse</em>. Chrome for Developers.
+                https://developer.chrome.com/docs/lighthouse/
+              </p>
               <p className="inline-note">Backend, data and deployment (Assessment 2)</p>
               <p>
                 Docker Inc. (n.d.). <em>Best practices for writing Dockerfiles</em>.
