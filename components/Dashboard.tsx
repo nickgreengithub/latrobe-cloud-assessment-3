@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getDashboard, type Dashboard as DashboardData } from "@/lib/api";
+import { LiveClock } from "@/components/dashboard/LiveClock";
 import {
   ClientsSection,
   FeedsSection,
   OverviewSection,
   TrafficSection,
-  formatTime,
   type SectionId,
 } from "@/components/dashboard/sections";
 
@@ -128,10 +128,9 @@ export default function Dashboard({
             ))}
           </div>
 
-          <span className="dash-updated">
-            <span className="sr-only">Last updated </span>
-            {formatTime(data.generatedAt)}
-          </span>
+          {/* Ticks once a second, and is its own component so that tick
+              re-renders two spans rather than the whole dashboard. */}
+          <LiveClock generatedAt={data.generatedAt} live={live} />
 
           <button
             type="button"
@@ -153,7 +152,7 @@ export default function Dashboard({
 
       <div className="dash-stage">
         {section === "overview" ? (
-          <OverviewSection data={data} onOpen={setSection} />
+          <OverviewSection data={data} onOpen={setSection} live={live} />
         ) : null}
         {section === "feeds" ? <FeedsSection data={data} /> : null}
         {section === "clients" ? <ClientsSection data={data} /> : null}

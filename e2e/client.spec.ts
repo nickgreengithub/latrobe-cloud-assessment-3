@@ -123,6 +123,27 @@ test.describe("Client use case — retrieving and viewing a feed", () => {
     }
   });
 
+  test("the dashboard clock keeps ticking and pausing stops the pulse", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard");
+
+    // The clock is the "still counting" signal. If it stops, the dashboard
+    // looks identical whether it is live or has quietly died.
+    const clock = page.locator(".dash-clock-time");
+    const first = await clock.textContent();
+    await expect
+      .poll(async () => clock.textContent(), { timeout: 5_000 })
+      .not.toBe(first);
+
+    // The leading-edge ping is only honest while data is actually arriving.
+    await expect(page.locator(".pulse-ping")).toBeAttached();
+    await page.getByRole("button", { name: /Live/ }).click();
+    await expect(page.locator(".pulse-ping")).toHaveCount(0);
+    // Scoped to the clock: the toggle itself also reads "Paused".
+    await expect(page.locator(".dash-clock-age")).toHaveText(/paused/);
+  });
+
   test("an overview tile opens the section that explains it", async ({ page }) => {
     await page.goto("/dashboard");
 

@@ -36,9 +36,12 @@ function niceCeiling(value: number) {
 export function PulseChart({
   points,
   bucketSeconds,
+  live = true,
 }: {
   points: PulsePoint[];
   bucketSeconds: number;
+  /** Drives the leading-edge ping — a heartbeat on a paused view would lie. */
+  live?: boolean;
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
@@ -166,16 +169,32 @@ export function PulseChart({
             <path className="pulse-line requests" d={pathFor("requests")} />
             <path className="pulse-line errors" d={pathFor("errors")} />
 
-            {/* Endpoint marker with a surface ring, so it stays legible where
-                it crosses the line. Only the endpoint is labelled — a number
-                on every point is chaos and goes unread. */}
+            {/* The leading edge — "now".
+                The expanding ring is the pulse: it repeats on a fixed beat
+                whether or not traffic is arriving, because its job is to say
+                the view is still counting, not to encode a value. It is
+                drawn beneath the marker and carries no data, so it is hidden
+                from assistive technology and stopped under reduced motion.
+                Only the endpoint is marked — a marker on every point is
+                chaos and goes unread. */}
             {latest ? (
-              <circle
-                className="pulse-marker"
-                cx={xAt(lastIndex)}
-                cy={yAt(latest.requests)}
-                r={4}
-              />
+              <g>
+                {live ? (
+                  <circle
+                    className="pulse-ping"
+                    cx={xAt(lastIndex)}
+                    cy={yAt(latest.requests)}
+                    r={4}
+                    aria-hidden="true"
+                  />
+                ) : null}
+                <circle
+                  className={`pulse-marker${live ? " beating" : ""}`}
+                  cx={xAt(lastIndex)}
+                  cy={yAt(latest.requests)}
+                  r={4}
+                />
+              </g>
             ) : null}
 
             {hover !== null && active ? (

@@ -63,9 +63,11 @@ function Panel({
 export function OverviewSection({
   data,
   onOpen,
+  live,
 }: {
   data: Dashboard;
   onOpen: (section: SectionId) => void;
+  live: boolean;
 }) {
   const healthy = data.health.database.status === "connected";
   const worstAlert = data.alerts[0];
@@ -126,6 +128,7 @@ export function OverviewSection({
         <PulseChart
           points={data.pulse.points}
           bucketSeconds={data.pulse.bucketSeconds}
+          live={live}
         />
       </Panel>
 

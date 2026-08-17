@@ -1837,8 +1837,12 @@ select {
    that can grow without limit scroll inside themselves.
    ============================================================ */
 
+/* No extra margin. The .view gap already spaces the head from the body on
+   every page, and adding to it here made the dashboard's breadcrumb sit
+   further from its content than the same pill does everywhere else. The
+   class stays only to mark that this head carries no lead paragraph. */
 .view-head.compact {
-  margin-bottom: 0.35rem;
+  margin-bottom: 0;
 }
 
 .dash-body {
@@ -1908,10 +1912,31 @@ select {
   gap: 0.5rem;
 }
 
-.dash-updated {
-  color: var(--muted);
-  font-size: 0.72rem;
+/* ---- Live clock ---- */
+
+.dash-clock {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  /* Tabular figures so a ticking second hand does not shift the layout
+     beside it every time a digit changes width. */
   font-variant-numeric: tabular-nums;
+}
+
+.dash-clock-time {
+  color: var(--text);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+.dash-clock-age {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+/* A reading that has stopped arriving is the one thing here worth a colour. */
+.dash-clock-age.stale {
+  color: var(--warn);
 }
 
 .window-picker {
@@ -2247,6 +2272,44 @@ select {
 }
 
 .pulse-marker.errors { fill: var(--viz-errors); }
+
+/* The pulse itself: a ring expanding out of the leading edge on a fixed
+   beat. It carries no value — it exists so the chart reads as live rather
+   than as a picture of the last ten seconds. Purely CSS, so the heartbeat
+   costs no re-render and no JavaScript. */
+.pulse-ping {
+  fill: none;
+  stroke: var(--viz-requests);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulse-ping 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+
+@keyframes pulse-ping {
+  0% { transform: scale(1); opacity: 0.65; }
+  70% { transform: scale(4.5); opacity: 0; }
+  100% { transform: scale(4.5); opacity: 0; }
+}
+
+/* The marker itself breathes on the same beat, so the centre of the pulse
+   reads as a heartbeat rather than as a static dot with a ring around it. */
+.pulse-marker.beating {
+  animation: pulse-beat 2.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes pulse-beat {
+  0%, 70%, 100% { transform: scale(1); }
+  12% { transform: scale(1.35); }
+}
+
+/* Both are decoration; the clock and the counters carry the information. */
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ping { animation: none; opacity: 0; }
+  .pulse-marker.beating { animation: none; }
+}
 
 .pulse-crosshair {
   stroke: var(--border-strong);
