@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TIME_ZONE_LABEL, formatClockFrom } from "@/lib/format";
 
 /**
  * A clock that ticks every second, and how long ago the data was read.
@@ -17,14 +18,6 @@ import { useEffect, useState } from "react";
  * looks the same whether the system is being watched or has quietly stopped;
  * a second hand says the page is still counting.
  */
-
-/** Constructed once — a formatter per tick is a formatter per second. */
-const CLOCK = new Intl.DateTimeFormat("en-AU", {
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: false,
-});
 
 export function LiveClock({
   generatedAt,
@@ -55,8 +48,9 @@ export function LiveClock({
         below is the part worth hearing, and only when it goes stale.
       */}
       <span className="dash-clock-time" aria-hidden="true">
-        {CLOCK.format(new Date(now))}
+        {formatClockFrom(now)}
       </span>
+      <span className="dash-clock-zone" aria-hidden="true">{TIME_ZONE_LABEL}</span>
       <span className={`dash-clock-age${ageSeconds > 30 ? " stale" : ""}`}>
         <span className="sr-only">Data last read </span>
         {live ? `${ageSeconds}s ago` : "paused"}

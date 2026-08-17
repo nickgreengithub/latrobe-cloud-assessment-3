@@ -1,3 +1,5 @@
+import { formatNumber } from "@/lib/format";
+
 /**
  * A labelled horizontal bar, used for every "x per y" breakdown on the
  * dashboard.
@@ -29,7 +31,7 @@ export function MetricBar({
       <div className="metric-row-head">
         <span className="metric-row-label">{label}</span>
         <span className="metric-row-value">
-          {value.toLocaleString()}
+          {formatNumber(value)}
           {detail ? <span className="metric-row-detail"> {detail}</span> : null}
         </span>
       </div>

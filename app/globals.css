@@ -1929,6 +1929,14 @@ select {
   letter-spacing: 0.02em;
 }
 
+/* The zone is fixed to Melbourne so the server and the browser agree; saying
+   so removes the ambiguity that creates for anyone reading from elsewhere. */
+.dash-clock-zone {
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
 .dash-clock-age {
   color: var(--muted);
   font-size: 0.8rem;

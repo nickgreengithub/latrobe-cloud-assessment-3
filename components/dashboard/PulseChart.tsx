@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PulsePoint } from "@/lib/api";
-import { formatClock } from "@/lib/format";
+import { formatClock, formatDay, formatNumber } from "@/lib/format";
 
 /**
  * Activity pulse — requests and errors over the reporting window.
@@ -55,17 +55,6 @@ function tickIntervalFor(spanSeconds: number): number {
   return DAY;
 }
 
-const TICK_CLOCK = new Intl.DateTimeFormat("en-AU", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
-
-const TICK_DAY = new Intl.DateTimeFormat("en-AU", {
-  day: "numeric",
-  month: "short",
-});
-
 /**
  * Ticks on whole-clock boundaries — :00, :10, :20, or midnight for days.
  *
@@ -89,8 +78,8 @@ function buildTicks(firstMs: number, lastMs: number) {
     ticks.push({
       at,
       label: isDaily
-        ? TICK_DAY.format(new Date(at))
-        : TICK_CLOCK.format(new Date(at)),
+        ? formatDay(at)
+        : formatClock(new Date(at).toISOString()),
     });
   }
   return ticks;
@@ -196,14 +185,14 @@ export function PulseChart({
               <line x1="1" y1="4" x2="15" y2="4" className="key-requests" />
             </svg>
             Requests
-            <strong>{totalRequests.toLocaleString()}</strong>
+            <strong>{formatNumber(totalRequests)}</strong>
           </span>
           <span className="legend-item">
             <svg className="legend-key" viewBox="0 0 16 8" aria-hidden="true">
               <line x1="1" y1="4" x2="15" y2="4" className="key-errors" />
             </svg>
             Errors
-            <strong>{totalErrors.toLocaleString()}</strong>
+            <strong>{formatNumber(totalErrors)}</strong>
           </span>
         </div>
         <span className="pulse-bucket">{bucketLabel} buckets</span>
