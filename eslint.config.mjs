@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Playwright output. These hold a bundled report and trace data, so
+    // linting them reports thousands of problems in code nobody wrote —
+    // and only after a test run, which makes `npm run lint` pass or fail
+    // depending on what you happened to do beforehand.
+    "playwright-report/**",
+    "test-results/**",
+    "blob-report/**",
   ]),
 ]);
 
