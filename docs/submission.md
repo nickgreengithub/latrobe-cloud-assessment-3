@@ -24,6 +24,11 @@ unzip -l latrobe-rss-a3-22840097.zip | grep -c node_modules   # expect 0
 - [ ] Submitted via Moodle so it **generates a Turnitin similarity score** —
       a submission that produces no score cannot be checked and will not be
       marked.
+- [ ] **Check the video is actually viewable.** Marking Assessment 2 the
+      coordinator found submissions he could not open because the video "was
+      set to private". If it is hosted rather than uploaded, open the link in
+      a private browsing window and confirm it plays. A video nobody can open
+      is the same as no video.
 
 ## Assessment 4 — the live defence
 
